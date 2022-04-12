@@ -37,3 +37,23 @@ def load(request):  # 继承请求类
             return JsonResponse({'errno': 1, 'msg': "文件不存在", 'name': name})
     else:
         return JsonResponse({'errno': 1001, 'msg': "请求方式错误"})
+
+@csrf_exempt
+def getFileList(request):
+    if request.method == 'POST':
+        fileList = []
+        all = Article.objects.all()
+        print(type(all))
+        for one in all:
+            file = {}
+            file['fileName'] = one.name;
+            file['createTime'] = one.createTime;
+            file['lastEditTime'] = one.lastEditTime;
+            fileList.append(file)
+        print(fileList)
+        return JsonResponse({'errno':0, 'fileList':fileList})
+    else:
+        return JsonResponse({'errno': 1001, 'msg': "请求方式错误"})
+
+def delete(request):
+
