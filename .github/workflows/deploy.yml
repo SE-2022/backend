@@ -1,0 +1,24 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: deploy to server
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - id: ssh
+        uses: invi5H/ssh-action@v1
+        with:
+          SSH_HOST: ${{ secrets.ALIYUN_SERVER_HOST }}
+          SSH_PORT: 22
+          SSH_USER: ${{ secrets.ALIYUN_REMOTE_USER }}
+          SSH_KEY: ${{ secrets.ALIYUN_SERVER_ACCESS_TOKEN }}
+      - run: ssh ${{ steps.ssh.outputs.SERVER }} pwd
