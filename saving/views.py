@@ -55,5 +55,28 @@ def getFileList(request):
     else:
         return JsonResponse({'errno': 1001, 'msg': "请求方式错误"})
 
-# def delete(request):
+
+@csrf_exempt
+def delete(request):
+    if request.method == 'POST':
+        fileName = request.POST.get('fileName')
+        try:
+            file = Article.objects.get(name=fileName)
+            file.delete()
+            return JsonResponse({'errno': 0, 'msg': '文件删除成功'})
+        except Article.DoesNotExist:
+            return JsonResponse({'errno': 2001, 'msg': '文件不存在'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': "请求方式错误"})
+
+
+@csrf_exempt
+def create(request):
+    if request.method == 'POST':
+        fileName = request.POST.get('fileName')
+        newFile = Article(name=fileName)
+        newFile.save()
+        return JsonResponse({'errno':0, 'msg':'文件创建成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': "请求方式错误"})
 
