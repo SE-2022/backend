@@ -17,8 +17,8 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('api/user', include(('user.urls', 'user'))),
-    path('api/file/', include(('file.urls', 'file') )),
-    path('api/team/', include(('team.urls', 'team') )),
-    path('api/message/', include(('message.urls', 'message') )),
+    path('api/user/', include(('user.urls', 'user'))),
+    path('api/file/', include(('file.urls', 'file'))),
+    path('api/team/', include(('team.urls', 'team'))),
+    path('api/message/', include(('message.urls', 'message'))),
 ]
