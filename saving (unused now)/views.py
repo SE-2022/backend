@@ -1,4 +1,4 @@
-# saving/views.py
+# saving (unused now)/views.py
 import json
 
 from django.http import JsonResponse

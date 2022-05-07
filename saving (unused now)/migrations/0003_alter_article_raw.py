@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('saving', '0002_remove_article_id_alter_article_name'),
+        ('saving (unused now)', '0002_remove_article_id_alter_article_name'),
     ]
 
     operations = [
