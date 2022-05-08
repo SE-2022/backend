@@ -1,5 +1,5 @@
 from django.db import IntegrityError
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.contrib.auth.hashers import make_password, check_password
 import smtplib
@@ -15,7 +15,7 @@ def send_email(target, content):
 
 
 def password_check(password):
-    return len(password) >= 8;
+    return len(password) >= 8
 
 
 def res(number, message):
@@ -27,7 +27,7 @@ def login_check(request):
 
 
 def userinfo_check(user):
-    return username is not None and password is not None and email is not None
+    return user.username is not None and user.password is not None and user.email is not None
 
 
 @csrf_exempt
@@ -94,10 +94,23 @@ def logout(request):
         return res(1,'请求方式错误')
 
 
+@csrf_exempt
+def get_user_info(request):
+    if request.method != 'POST':
+        return res(1,'请求方式错误')
+    if not login_check(request):
+        return res(1006,'用户未登录')
+    user = User.objects.get(userID=request.session['userID'])
+    return JsonResponse({'errno':1000, 'msg':'获取个人信息成功',
+                         'user_info':{
+                             'userID':user.userID,
+                             'username':user.username,
+                             'email':user.email,
+                         }})
+
+
+@csrf_exempt
 def edit_user_info(request):
-    # username
-    # password
-    # email
     if request.method != 'POST':
         return res(1,'请求方式错误')
     if not login_check(request):
@@ -109,18 +122,31 @@ def edit_user_info(request):
     user.email = request.POST.get('email')
     if not userinfo_check(user) or not password_check(user.password):
         return res(1007,'个人信息填写有误')
+    user.password = make_password(user.password)
     user.save()
     return res(1000,'编辑个人信息成功')
 
-
-def edit_user_avatar(request):
+@csrf_exempt
+def get_user_avatar(request):
     if request.method != 'POST':
         return res(1,'请求方式错误')
     if not login_check(request):
         return res(1006,'用户未登录')
     user = User.objects.get(userID=request.session['userID'])
-    user.avatar = request.POST.get('avatar')
+    return HttpResponse(user.avatar.read(), content_type='image')
+
+
+@csrf_exempt
+def edit_user_avatar(request):
+    if request.method != 'POST':
+        return res(1,'请求方式错误')
+    if not login_check(request):
+        return res(1006,'用户未登录')
+    if 'avatar' not in request.FILES:
+        return res(1008,'个人头像上传失败')
+    user = User.objects.get(userID=request.session['userID'])
+    user.avatar = request.FILES.get('avatar')
     if user.avatar is None:
         return res(1008,'个人头像上传失败')
-    user.save
+    user.save()
     return res(1000,'编辑个人头像成功')
