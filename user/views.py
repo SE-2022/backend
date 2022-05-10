@@ -19,7 +19,7 @@ def password_check(password):
 
 
 def res(number, message):
-    return JsonResponse({'errno':number,"msg":message})
+    return JsonResponse({'errno': number, "msg": message})
 
 
 def login_check(request):
@@ -39,9 +39,9 @@ def register(request):
             password = request.POST.get('password')
             email = request.POST.get('email')
         except ValueError:
-            return JsonResponse({'errno': 1002, 'msg':'缺少字段'})
+            return JsonResponse({'errno': 1002, 'msg': '缺少字段'})
         except Exception as e:
-            return JsonResponse({'errno': 1001, 'msg':repr(e)})
+            return JsonResponse({'errno': 1001, 'msg': repr(e)})
         user = User(username=username,
                     password=make_password(password),
                     email=email)
@@ -76,62 +76,63 @@ def login(request):
         try:
             user = User.objects.get(username=username)
         except Exception:
-            return res(1004,'用户名不存在')
+            return res(1004, '用户名不存在')
         if not check_password(password, user.password):
-            return res(1005,'密码错误')
+            return res(1005, '密码错误')
         request.session['userID'] = user.userID
-        return res(1000,'登陆成功')
+        return res(1000, '登陆成功')
     else:
-        return res(1,'请求方式错误')
+        return res(1, '请求方式错误')
 
 
 @csrf_exempt
 def logout(request):
     if request.method == 'POST':
         request.session.flush()
-        return res(1000,'注销成功')
+        return res(1000, '注销成功')
     else:
-        return res(1,'请求方式错误')
+        return res(1, '请求方式错误')
 
 
 @csrf_exempt
 def get_user_info(request):
     if request.method != 'POST':
-        return res(1,'请求方式错误')
+        return res(1, '请求方式错误')
     if not login_check(request):
-        return res(1006,'用户未登录')
+        return res(1006, '用户未登录')
     user = User.objects.get(userID=request.session['userID'])
-    return JsonResponse({'errno':1000, 'msg':'获取个人信息成功',
-                         'user_info':{
-                             'userID':user.userID,
-                             'username':user.username,
-                             'email':user.email,
+    return JsonResponse({'errno': 1000, 'msg': '获取个人信息成功',
+                         'user_info': {
+                             'userID': user.userID,
+                             'username': user.username,
+                             'email': user.email,
                          }})
 
 
 @csrf_exempt
 def edit_user_info(request):
     if request.method != 'POST':
-        return res(1,'请求方式错误')
+        return res(1, '请求方式错误')
     if not login_check(request):
-        return res(1006,'用户未登录')
+        return res(1006, '用户未登录')
     user = User.objects.get(userID=request.session['userID'])
     # 获取信息
     user.username = request.POST.get('username')
     user.password = request.POST.get('password')
     user.email = request.POST.get('email')
     if not userinfo_check(user) or not password_check(user.password):
-        return res(1007,'个人信息填写有误')
+        return res(1007, '个人信息填写有误')
     user.password = make_password(user.password)
     user.save()
-    return res(1000,'编辑个人信息成功')
+    return res(1000, '编辑个人信息成功')
+
 
 @csrf_exempt
 def get_user_avatar(request):
     if request.method != 'POST':
-        return res(1,'请求方式错误')
+        return res(1, '请求方式错误')
     if not login_check(request):
-        return res(1006,'用户未登录')
+        return res(1006, '用户未登录')
     user = User.objects.get(userID=request.session['userID'])
     return HttpResponse(user.avatar.read(), content_type='image')
 
@@ -139,14 +140,14 @@ def get_user_avatar(request):
 @csrf_exempt
 def edit_user_avatar(request):
     if request.method != 'POST':
-        return res(1,'请求方式错误')
+        return res(1, '请求方式错误')
     if not login_check(request):
-        return res(1006,'用户未登录')
+        return res(1006, '用户未登录')
     if 'avatar' not in request.FILES:
-        return res(1008,'个人头像上传失败')
+        return res(1008, '个人头像上传失败')
     user = User.objects.get(userID=request.session['userID'])
     user.avatar = request.FILES.get('avatar')
     if user.avatar is None:
-        return res(1008,'个人头像上传失败')
+        return res(1008, '个人头像上传失败')
     user.save()
-    return res(1000,'编辑个人头像成功')
+    return res(1000, '编辑个人头像成功')
