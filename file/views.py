@@ -5,6 +5,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
 from file.models import File
+from team.models import Team
 from user.models import User
 from user.views import login_check
 
@@ -55,23 +56,29 @@ def create_file(request):
                 return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
             else:
                 username = user.username
-                new_file = File()
-                new_file.file_name = file_name
-                new_file.isDir = file_type
-                new_file.commentFul = comment
-                new_file.fatherId = father_id
-                new_file.userID = user
-                new_file.isDelete = False
-                new_file.save()
-                # new_file = File(fatherId=father_id,
-                #                 # isDir=file_type,
-                #                 file_name=file_name,
-                #                 username=username,
-                #                 userID=user,
-                #                 commentFul=comment,
-                #                 isDelete=False)
-                # # How to acquire the directory the file belong to?
+                # new_file = File()
+                # new_file.file_name = file_name
+                # new_file.isDir = file_type
+                # new_file.commentFul = comment
+                # new_file.fatherId = father_id
+                # new_file.userID = user
+                # new_file.isDelete = False
                 # new_file.save()
+
+                team = Team.objects.filter(managerID=user, isPerson=True)
+                if team.count() == 0:
+                    team = Team(managerID=user, isPerson=True)
+                    team.save()
+                new_file = File(fatherId=father_id,
+                                # isDir=file_type,
+                                file_name=file_name,
+                                username=username,
+                                userID=user,
+                                commentFul=comment,
+                                TeamID=team,
+                                isDelete=False)
+                # How to acquire the directory the file belong to?
+                new_file.save()
                 result = {'errno': 0,
                           'create_time': new_file.create_time,
                           'last_modify_time': new_file.last_modify_time,

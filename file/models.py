@@ -2,6 +2,8 @@ from django.db import models
 
 from team.models import Team
 from user.models import User
+
+
 # class Directory(models.Model):
 #     dir_name = models.CharField(max_length=100)
 #     dirID = models.AutoField(primary_key=True, editable=False, null=False)
@@ -18,7 +20,7 @@ from user.models import User
 
 class File(models.Model):
     FileID = models.AutoField(primary_key=True, editable=False, null=False)
-    isDir = models.BooleanField(null=False)
+    isDir = models.BooleanField(null=False, default=False)
     username = models.CharField(max_length=100)
     file_name = models.CharField(max_length=100)
     create_time = models.DateTimeField(auto_now_add=True)
