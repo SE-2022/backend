@@ -3,11 +3,11 @@ import json
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from saving.models import Article   # 引入数据库 Author 对象
+from saving.models import Article  # 引入数据库 Author 对象
 
 
 # Create your views here.
-@csrf_exempt    # 跨域设置
+@csrf_exempt  # 跨域设置
 def save(request):  # 继承请求类
     if request.method == 'POST':  # 判断请求方式是否为 POST（此处要求为POST方式）
         name = request.POST.get('name')  # 获取请求体中的请求数据
@@ -26,7 +26,7 @@ def save(request):  # 继承请求类
         return JsonResponse({'errno': 1001, 'msg': "请求方式错误"})
 
 
-@csrf_exempt    # 跨域设置
+@csrf_exempt  # 跨域设置
 def load(request):  # 继承请求类
     if request.method == 'POST':  # 判断请求方式是否为 POST（此处要求为POST方式）
         name = request.POST.get('name')  # 获取请求体中的请求数据
@@ -37,6 +37,7 @@ def load(request):  # 继承请求类
             return JsonResponse({'errno': 1, 'msg': "文件不存在", 'name': name})
     else:
         return JsonResponse({'errno': 1001, 'msg': "请求方式错误"})
+
 
 @csrf_exempt
 def getFileList(request):
@@ -51,7 +52,7 @@ def getFileList(request):
             file['lastEditTime'] = one.lastEditTime;
             fileList.append(file)
         print(fileList)
-        return JsonResponse({'errno':0, 'fileList':fileList})
+        return JsonResponse({'errno': 0, 'fileList': fileList})
     else:
         return JsonResponse({'errno': 1001, 'msg': "请求方式错误"})
 
@@ -76,7 +77,6 @@ def create(request):
         fileName = request.POST.get('fileName')
         newFile = Article(name=fileName)
         newFile.save()
-        return JsonResponse({'errno':0, 'msg':'文件创建成功'})
+        return JsonResponse({'errno': 0, 'msg': '文件创建成功'})
     else:
         return JsonResponse({'errno': 1, 'msg': "请求方式错误"})
-
