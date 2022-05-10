@@ -69,6 +69,8 @@ def create_file(request):
                 if team.count() == 0:
                     team = Team(managerID=user, isPerson=True)
                     team.save()
+                else:
+                    team = Team.objects.get(managerID=user, isPerson=True)
                 new_file = File(fatherId=father_id,
                                 # isDir=file_type,
                                 file_name=file_name,
@@ -80,6 +82,7 @@ def create_file(request):
                 # How to acquire the directory the file belong to?
                 new_file.save()
                 result = {'errno': 0,
+                          'fileName': new_file.file_name,
                           'create_time': new_file.create_time,
                           'last_modify_time': new_file.last_modify_time,
                           'commentFul': new_file.commentFul,
@@ -100,6 +103,7 @@ def delete_file(request):
         if login_check(request):
             try:
                 file_name = request.POST.get('file_name')
+
                 user = User.objects.get(userID=request.session['userID'])
                 # fileid = request.POST.get('fileid')
             except ValueError:
