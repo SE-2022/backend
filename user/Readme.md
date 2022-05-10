@@ -13,6 +13,8 @@
 |1006|未登录|
 |1007|编辑个人信息失败|
 |1008|编辑个人头像失败|
+|1009|注册，用户名已被注册|
+|1010|编辑个人信息，用户名已存在|
 
 ## 路由
 
@@ -20,6 +22,7 @@
 - 注册：register
 - 登录：login
 - 注销：logout
+- 等等
 
 ## 其它值得说明的
 
@@ -27,7 +30,7 @@
 
 `request.session`的操作方式类似于python的字典，对这个对象的写操作会反映在数据库的session表中
 
-在`login`方法中，`request.session['id']`被设为`userID`
+在`login`方法中，`request.session['userID']`被设为`userID`
 
 在`logout`方法中，会调用`request.session.flush()`方法，大概会把字典清空
 
