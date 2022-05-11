@@ -71,7 +71,7 @@ def create_file(request):
                     team.save()
                 else:
                     team = Team.objects.get(managerID=user, isPerson=True)
-                new_file = File(fatherId=father_id,
+                new_file = File(fatherID=father_id,
                                 # isDir=file_type,
                                 file_name=file_name,
                                 username=username,

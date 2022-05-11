@@ -25,9 +25,16 @@ class File(models.Model):
     file_name = models.CharField(max_length=100)
     create_time = models.DateTimeField(auto_now_add=True)
     last_modify_time = models.DateTimeField(auto_now=True)
-    userID = models.ForeignKey(User, to_field='userID', on_delete=models.CASCADE)
-    teamID = models.ForeignKey(Team, to_field='teamID', on_delete=models.CASCADE,
-                               blank=True, null=True)
+    user = models.ForeignKey(
+        User, to_field='userID',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+    team = models.ForeignKey(
+        Team, to_field='teamID',
+        on_delete=models.CASCADE,
+        blank=True, null=True
+    )
     # dirID = models.ForeignKey(Directory, to_field='dirID', on_delete=models.CASCADE)
     fatherID = models.IntegerField(default=0)
     commentFul = models.BooleanField(default=True)
