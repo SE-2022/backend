@@ -11,6 +11,8 @@ from file.models import File
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 
+from utility.utility import *
+
 
 def send_email(target, content):
     return
@@ -20,14 +22,6 @@ def password_check(password):
     return len(password) >= 8
 
 
-def res(number, message):
-    return JsonResponse({'errno': number, "msg": message})
-
-
-def login_check(request):
-    return 'userID' in request.session
-
-
 def userinfo_check(user):
     return user.username is not None and user.password is not None and user.email is not None
 
@@ -35,6 +29,7 @@ def userinfo_check(user):
 def username_exist(username):
     user_list = User.objects.filter(username=username)
     return len(list(user_list)) != 0
+
 
 @csrf_exempt
 def register(request):
@@ -66,7 +61,7 @@ def register(request):
         except Exception as e:
             return JsonResponse({'errno': 1001, 'msg': repr(e)})
         # 创建根文件夹
-        file = File(fatherId=-1,
+        file = File(fatherID=-1,
                     isDir=True,
                     file_name='root',
                     username=user.username,
