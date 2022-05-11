@@ -10,4 +10,5 @@ urlpatterns = [
     path('edit_user_info', edit_user_info),
     path('get_user_avatar', get_user_avatar),
     path('edit_user_avatar', edit_user_avatar),
+    path('debug_get_user_list', debug_get_user_list),
 ]

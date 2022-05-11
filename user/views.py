@@ -7,6 +7,7 @@ from django.core.exceptions import *
 
 # from django.contrib.auth.models import User
 from user.models import User
+from file.models import File
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 
@@ -51,8 +52,39 @@ def register(request):
         if username_exist(username):
             return res(1009, "用户名已被注册")
         # 生成user对象
+        user = User(username=username,
+                    password=make_password(password),
+                    email=email)
+        # 检查
+        if not userinfo_check(user):
+            return JsonResponse({'errno': 1002, 'msg': '缺少字段'})
+        if not password_check(password):
+            return JsonResponse({'errno': 1003, 'msg': '密码太弱'})
+        # 尝试保存user
+        try:
+            user.save()
+        except Exception as e:
             return JsonResponse({'errno': 1001, 'msg': repr(e)})
-
+        # 创建根文件夹
+        file = File(fatherId=-1,
+                    isDir=True,
+                    file_name='root',
+                    username=user.username,
+                    userID=user,
+                    commentFul=False,
+                    # TeamID=team,
+                    isDelete=False)
+        try:
+            file.save()
+        except Exception:
+            user.delete()
+            return res(1012, "用户根文件夹创建失败")
+        user.root_file = file
+        user.save()
+        # except
+        return JsonResponse({'errno': 1000, 'msg': '注册成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': "请求方式错误"})
 
 
 @csrf_exempt
@@ -152,3 +184,14 @@ def edit_user_avatar(request):
         return res(1008, '个人头像上传失败')
     user.save()
     return res(1000, '编辑个人头像成功')
+
+
+@csrf_exempt
+def debug_get_user_list(request):
+    if request.method != 'POST':
+        return res(1, '请求方式错误')
+    user_list = User.objects.all()
+    result = []
+    for user in user_list:
+        result.append(user.to_dict())
+    return JsonResponse(result, safe=False)
