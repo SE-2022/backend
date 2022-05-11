@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from file.models import File
 from team.models import Team
 from user.models import User
-from user.views import login_check
+from user.views import login_check, res
 
 
 # from file.models import Directory
@@ -77,7 +77,7 @@ def create_file(request):
                                 username=username,
                                 userID=user,
                                 commentFul=comment,
-                                TeamID=team,
+                                # TeamID=team,
                                 isDelete=False)
                 # How to acquire the directory the file belong to?
                 new_file.save()
@@ -122,3 +122,20 @@ def delete_file(request):
             return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
     else:
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
+@csrf_exempt
+def person_root_filelist(request):
+    if request.method != 'POST':
+        return res(1, '请求方式错误')
+    if not login_check(request):
+        return res(1006, '用户未登录')
+    user = User.objects.get(userID=request.session['userID'])
+    if user.root_file is None:
+        return res(10086,'此用户没有root文件夹，这种情况不应该出现')
+    filelist = File.objects.filter(fatherID=user.root_file.fileID)
+    result = []
+    for file in filelist:
+        result.append(file.to_dic())
+    return JsonResponse({'errno':0, 'msg':'成功获取个人根文件列表',
+                         'filelist':result})
