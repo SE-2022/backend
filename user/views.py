@@ -1,16 +1,12 @@
-from django.db import IntegrityError
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
 from django.contrib.auth.hashers import make_password, check_password
-import smtplib
 from django.core.exceptions import *
-
-# from django.contrib.auth.models import User
-from user.models import User
-from file.models import File
+from django.http import HttpResponse
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 
+from file.models import File
+# from django.contrib.auth.models import User
+from user.models import User
 from utility.utility import *
 
 
@@ -62,7 +58,7 @@ def register(request):
             isDir=True,
             file_name='root',
             username=user.username,
-            userID=user,
+            user=user,
             commentFul=False,
             isDelete=False
         )

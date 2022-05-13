@@ -15,7 +15,7 @@ from user.views import login_check, res
 
 @csrf_exempt
 def personal_filelist(user):
-    file_list = File.objects.filter(userID=user)
+    file_list = File.objects.filter(user=user)
     res = []
     for i in file_list:
         if not i.isDelete:
@@ -25,7 +25,7 @@ def personal_filelist(user):
 
 @csrf_exempt
 def delete_filelist(user):
-    file_list = File.objects.filter(userID=user)
+    file_list = File.objects.filter(user=user)
     res = []
     for i in file_list:
         if i.isDelete:
@@ -65,17 +65,17 @@ def create_file(request):
                 # new_file.isDelete = False
                 # new_file.save()
 
-                team = Team.objects.filter(managerID=user, isPerson=True)
+                team = Team.objects.filter(manager=user, isPerson=True)
                 if team.count() == 0:
-                    team = Team(managerID=user, isPerson=True)
+                    team = Team(manager=user, isPerson=True)
                     team.save()
                 else:
-                    team = Team.objects.get(managerID=user, isPerson=True)
+                    team = Team.objects.get(manager=user, isPerson=True)
                 new_file = File(fatherID=father_id,
                                 # isDir=file_type,
                                 file_name=file_name,
                                 username=username,
-                                userID=user,
+                                user=user,
                                 commentFul=comment,
                                 # TeamID=team,
                                 isDelete=False)
@@ -87,7 +87,7 @@ def create_file(request):
                           'last_modify_time': new_file.last_modify_time,
                           'commentFul': new_file.commentFul,
                           'isDir': new_file.isDir,
-                          'author': new_file.userID.username,
+                          'author': new_file.user.username,
                           'msg': "新建成功"}
                 return JsonResponse(result)
 
@@ -112,7 +112,7 @@ def delete_file(request):
                 return JsonResponse({'errno': 2000, 'msg': repr(e)})
 
             file = File.objects.get(file_name=file_name, isDelete=False)
-            fileid = file.FileID
+            fileid = file.fileID
             file.isDelete = True
             file.save()
             res = {'errno': 0, 'msg': "文档删除成功", 'personal_fileList': personal_filelist(user),
