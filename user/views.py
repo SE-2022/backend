@@ -180,11 +180,14 @@ def edit_user_avatar(request):
     return res(0, '编辑个人头像成功')
 
 
+@csrf_exempt
 def debug_status(request):
-    return JsonResponse({
-        'login yet': login_check(request),
-        'user': User.objects.get(userID=request.session['userID']).username
-    })
+    if login_check(request):
+        return JsonResponse({
+            'login yet': True,
+            'user': User.objects.get(userID=request.session['userID']).username
+        })
+    return JsonResponse({'login yet': False})
 
 
 @csrf_exempt

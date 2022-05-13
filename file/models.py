@@ -26,12 +26,14 @@ class File(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     last_modify_time = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(
-        User, to_field='userID',
+        User,
+        # to_field='userID',
         on_delete=models.CASCADE,
         null=True,
     )
     team = models.ForeignKey(
-        Team, to_field='teamID',
+        Team,
+        to_field='teamID',
         on_delete=models.CASCADE,
         blank=True, null=True
     )
