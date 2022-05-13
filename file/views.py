@@ -56,15 +56,6 @@ def create_file(request):
                 return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
             else:
                 username = user.username
-                # new_file = File()
-                # new_file.file_name = file_name
-                # new_file.isDir = file_type
-                # new_file.commentFul = comment
-                # new_file.fatherId = father_id
-                # new_file.userID = user
-                # new_file.isDelete = False
-                # new_file.save()
-
                 # team = Team.objects.filter(manager=user, isPerson=True)
                 # if team.count() == 0:
                 #     team = Team(manager=user, isPerson=True)
@@ -82,6 +73,7 @@ def create_file(request):
                 # How to acquire the directory the file belong to?
                 new_file.save()
                 result = {'errno': 0,
+                          "fileID":new_file.fileID,
                           'fileName': new_file.file_name,
                           'create_time': new_file.create_time,
                           'last_modify_time': new_file.last_modify_time,
@@ -95,6 +87,38 @@ def create_file(request):
             return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
     else:
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
+@csrf_exempt
+def edit_file(request):
+    if not request.method == 'POST':
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+    if not login_check(request):
+        return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    try:
+        fileid = request.POST.get('fileid')
+        file_content = request.POST.get('file_content')
+    except ValueError:
+        return JsonResponse({'errno': 2011, 'msg': "无法获取文件信息"})
+    except Exception as e:
+        return JsonResponse({'errno': 2000, 'msg': repr(e)})
+
+    file = File.objects.get(fileID=fileid)
+
+    if file.isDelete:
+        return JsonResponse({'errno': 2012, 'msg': "文件已被删除"})
+    elif file.isDir:
+        return JsonResponse({'errno': 2013, 'msg': "无法编辑文件夹内容"})
+    else:
+        file.content = file_content
+        file.save()
+        result = {'errno': 0,
+                  'fileName': file.file_name,
+                  'create_time': file.create_time,
+                  'last_modify_time': file.last_modify_time,
+                  'author': file.user.username,
+                  'msg': "保存成功"}
+        return JsonResponse(result)
 
 
 @csrf_exempt
@@ -132,10 +156,10 @@ def person_root_filelist(request):
         return res(1006, '用户未登录')
     user = User.objects.get(userID=request.session['userID'])
     if user.root_file is None:
-        return res(10086,'此用户没有root文件夹，这种情况不应该出现')
+        return res(10086, '此用户没有root文件夹，这种情况不应该出现')
     filelist = File.objects.filter(fatherID=user.root_file.fileID)
     result = []
     for file in filelist:
         result.append(file.to_dic())
-    return JsonResponse({'errno':0, 'msg':'成功获取个人根文件列表',
-                         'filelist':result})
+    return JsonResponse({'errno': 0, 'msg': '成功获取个人根文件列表',
+                         'filelist': result})

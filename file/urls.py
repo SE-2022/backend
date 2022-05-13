@@ -7,4 +7,5 @@ urlpatterns = [
     path('newfile', create_file),
     path('deletefile', delete_file),
     path('person_root_filelist', person_root_filelist),
+    path('editfile', edit_file)
 ]
