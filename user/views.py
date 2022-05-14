@@ -209,3 +209,4 @@ def debug_clear_user(request):
         user.delete()
         cnt += 1
     return res(10086, '成功删除'+str(cnt)+'个用户')
+
