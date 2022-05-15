@@ -226,7 +226,7 @@ def debug_clear_user(request):
 
 
 @csrf_exempt
-def debug_将所有人登出(request):
+def debug_everyone_logout(request):
     for name, se in login_dic.items():
         se.flush()
     login_dic.clear()
