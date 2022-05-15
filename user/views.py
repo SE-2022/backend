@@ -90,11 +90,11 @@ def login(request):
         try:
             user = User.objects.get(username=vals['username'])
         except ObjectDoesNotExist:
-            return res(1004,'用户名不存在')
+            return res(1004, '用户名不存在')
         except MultipleObjectsReturned:
-            return res(1001,'数据库中存在多个相同的用户名，这是一个bug')
+            return res(1001, '数据库中存在多个相同的用户名，这是一个bug')
         if not check_password(vals['password'], user.password):
-            return res(1005,'密码错误')
+            return res(1005, '密码错误')
         # 通过检查
         request.session['userID'] = user.userID
         return res(0, '登陆成功')
@@ -145,7 +145,7 @@ def edit_user_info(request):
     user.email = vals['email']
     # 各字段不能为空
     if not userinfo_check(user) or not password_check(user.password):
-        return res(1007,'个人信息填写有误')
+        return res(1007, '个人信息填写有误')
     # 用户名不得与现有的重复
     if username_exist(user.username):
         return res(1010, "用户名已被注册")
@@ -208,4 +208,4 @@ def debug_clear_user(request):
     for user in user_list:
         user.delete()
         cnt += 1
-    return res(10086, '成功删除'+str(cnt)+'个用户')
+    return res(10086, '成功删除' + str(cnt) + '个用户')

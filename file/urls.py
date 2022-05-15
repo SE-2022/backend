@@ -7,5 +7,9 @@ urlpatterns = [
     path('newfile', create_file),
     path('deletefile', delete_file),
     path('person_root_filelist', person_root_filelist),
-    path('editfile', edit_file)
+    path('editfile', edit_file),
+    path('getdirectorylist', get_file_list_of_dir),
+    path('recyclebin', get_filelist_of_recycle_bin),
+    path('completelydelete', completely_delete_file),
+    path('restorefile', restore_file)
 ]
