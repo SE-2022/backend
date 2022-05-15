@@ -14,4 +14,5 @@ urlpatterns = [
     path('debug_clear_user', debug_clear_user),
     path('debug_status', debug_status),
     path('debug_get_login_list', debug_get_login_list),
+    path('debug_将所有人登出', debug_将所有人登出),
 ]

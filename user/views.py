@@ -26,7 +26,7 @@ def username_exist(username):
     user_list = User.objects.filter(username=username)
     return len(list(user_list)) != 0
 
-login_user_list = []
+login_dic = {}
 
 @csrf_exempt
 def register(request):
@@ -98,7 +98,7 @@ def login(request):
             return res(1005, '密码错误')
         # 通过检查
         request.session['userID'] = user.userID
-        login_user_list.append(user.username)
+        login_dic[user.username] = request.session
         return res(0, '登陆成功')
     else:
         return res(2, '请求方式错误')
@@ -112,7 +112,7 @@ def logout(request):
         userID = request.session['userID']
         user = User.objects.get(userID=userID)
         request.session.flush()
-        login_user_list.remove(user.username)
+        login_dic.pop(user.username)
         return res(0, '注销成功')
     else:
         return res(2, '请求方式错误')
@@ -209,7 +209,10 @@ def debug_get_user_list(request):
 
 @csrf_exempt
 def debug_get_login_list(request):
-    return JsonResponse(login_user_list, safe=False)
+    login_list = []
+    for key in login_dic.keys():
+        login_list.append(key)
+    return JsonResponse(login_list, safe=False)
 
 # 清除所有注册用户
 @csrf_exempt
@@ -220,3 +223,11 @@ def debug_clear_user(request):
         user.delete()
         cnt += 1
     return res(10086, '成功删除' + str(cnt) + '个用户')
+
+
+@csrf_exempt
+def debug_将所有人登出(request):
+    for name, se in login_dic.items():
+        se.flush()
+    login_dic.clear()
+    return res(10086, "所有人都登出了")
