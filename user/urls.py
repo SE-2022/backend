@@ -13,4 +13,5 @@ urlpatterns = [
     path('debug_get_user_list', debug_get_user_list),
     path('debug_clear_user', debug_clear_user),
     path('debug_status', debug_status),
+    path('debug_get_login_list', debug_get_login_list),
 ]

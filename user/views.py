@@ -26,6 +26,7 @@ def username_exist(username):
     user_list = User.objects.filter(username=username)
     return len(list(user_list)) != 0
 
+login_user_list = []
 
 @csrf_exempt
 def register(request):
@@ -97,6 +98,7 @@ def login(request):
             return res(1005, '密码错误')
         # 通过检查
         request.session['userID'] = user.userID
+        login_user_list.append(user.username)
         return res(0, '登陆成功')
     else:
         return res(2, '请求方式错误')
@@ -107,7 +109,10 @@ def logout(request):
     if request.method == 'POST':
         if not login_check(request):
             return res(3, '未登录不能登出')
+        userID = request.session['userID']
+        user = User.objects.get(userID=userID)
         request.session.flush()
+        login_user_list.remove(user.username)
         return res(0, '注销成功')
     else:
         return res(2, '请求方式错误')
@@ -190,6 +195,7 @@ def debug_status(request):
     return JsonResponse({'login yet': False})
 
 
+# 获取全部注册用户的列表
 @csrf_exempt
 def debug_get_user_list(request):
     if request.method != 'POST':
@@ -201,6 +207,11 @@ def debug_get_user_list(request):
     return JsonResponse(result, safe=False)
 
 
+@csrf_exempt
+def debug_get_login_list(request):
+    return JsonResponse(login_user_list, safe=False)
+
+# 清除所有注册用户
 @csrf_exempt
 def debug_clear_user(request):
     user_list = User.objects.all()
