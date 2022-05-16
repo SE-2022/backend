@@ -186,13 +186,13 @@ def edit_user_avatar(request):
 
 
 @csrf_exempt
-def debug_status(request):
+def get_status(request):
     if login_check(request):
         return JsonResponse({
-            'login yet': True,
-            'user': User.objects.get(userID=request.session['userID']).username
+            'login': True,
+            'username': User.objects.get(userID=request.session['userID']).username
         })
-    return JsonResponse({'login yet': False})
+    return JsonResponse({'login': False})
 
 
 # 获取全部注册用户的列表
@@ -231,3 +231,5 @@ def debug_everyone_logout(request):
         se.flush()
     login_dic.clear()
     return res(10086, "所有人都登出了")
+
+
