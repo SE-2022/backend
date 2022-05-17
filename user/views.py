@@ -88,9 +88,9 @@ def login(request):
         if lack:
             return lack_err(lack_list)
         # !!!!!!!!!!! 仅供测试使用，最后要删除 !!!!!!!!!!!!!
-        if vals['username'] is 'admin':
-            request.session['userID'] = user.userID
-            login_dic[user.username] = request.session
+        # if vals['username'] is 'admin':
+        #     request.session['userID'] = user.userID
+        #     login_dic[user.username] = request.session
         # 检查
         try:
             user = User.objects.get(username=vals['username'])
