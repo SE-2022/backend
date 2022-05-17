@@ -79,14 +79,18 @@ def register(request):
 @csrf_exempt
 def login(request):
     if request.method == 'POST':
-        if login_check(request):
-            return res(1011, '已经登录，不能再次登录')
+        # if login_check(request):
+        #     return res(1011, '已经登录，不能再次登录')
         # print(request.session['userID'])
         # 获取信息
         vals = post_getAll(request, 'username', 'password')
         lack, lack_list = check_lack(vals)
         if lack:
             return lack_err(lack_list)
+        # !!!!!!!!!!! 仅供测试使用，最后要删除 !!!!!!!!!!!!!
+        if vals['username'] is 'admin':
+            request.session['userID'] = user.userID
+            login_dic[user.username] = request.session
         # 检查
         try:
             user = User.objects.get(username=vals['username'])
