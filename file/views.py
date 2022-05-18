@@ -249,7 +249,7 @@ def person_root_filelist(request):
     # result = []
     # for file in filelist:
     #     result.append(file.to_dic())
-    return JsonResponse({'errno': 0, 'msg': '成功获取个人根文件列表',
+    return JsonResponse({'errno': 0, 'msg': '成功获取个人根文件列表', 'root_id': user.root_file.fileID,
                          'filelist': acquire_filelist(user, user.root_file.fileID, False)})
 
 
