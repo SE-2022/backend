@@ -117,6 +117,33 @@ def create_file(request):
 
 
 @csrf_exempt
+def read_file(request):
+    if not request.method == 'POST':
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+    if not login_check(request):
+        return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    try:
+        fileid = request.POST.get('fileid')
+    except ValueError:
+        return JsonResponse({'errno': 2022, 'msg': "获取文件信息失败，无法查看文件内容"})
+
+    file = File.objects.get(fileID=fileid, user=User.objects.get(userID=request.session['userID']))
+    if file.isDir:
+        return JsonResponse({'errno': 2023, 'msg': "不支持阅读文件夹内容"})
+    if file.isDelete:
+        return JsonResponse({'errno': 2024, 'msg': "文件已被删除"})
+
+    result = {'errno': 0,
+              'fileName': file.file_name,
+              'create_time': file.create_time,
+              'last_modify_time': file.last_modify_time,
+              'author': file.user.username,
+              'msg': '成功打开文件' + file.file_name,
+              }
+    return JsonResponse(result)
+
+
+@csrf_exempt
 def edit_file(request):
     if not request.method == 'POST':
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
