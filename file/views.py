@@ -218,12 +218,12 @@ def person_root_filelist(request):
     user = User.objects.get(userID=request.session['userID'])
     if user.root_file is None:
         return res(10086, '此用户没有root文件夹，这种情况不应该出现')
-    filelist = File.objects.filter(fatherID=user.root_file.fileID, isDelete=False)
-    result = []
-    for file in filelist:
-        result.append(file.to_dic())
+    # filelist = File.objects.filter(fatherID=user.root_file.fileID, isDelete=False)
+    # result = []
+    # for file in filelist:
+    #     result.append(file.to_dic())
     return JsonResponse({'errno': 0, 'msg': '成功获取个人根文件列表',
-                         'filelist': result})
+                         'filelist': acquire_filelist(user, user.root_file.fileID, False)})
 
 
 @csrf_exempt
