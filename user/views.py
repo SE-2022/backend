@@ -26,7 +26,14 @@ def username_exist(username):
     user_list = User.objects.filter(username=username)
     return len(list(user_list)) != 0
 
+
+def email_exist(email):
+    email_list = User.objects.filter(email=email)
+    return len(email_list) != 0
+
+
 login_dic = {}
+
 
 @csrf_exempt
 def register(request):
@@ -38,7 +45,10 @@ def register(request):
             return lack_err(lack_list)
         # 用户名不得重复
         if username_exist(vals['username']):
-            return res(1009, "用户名已被注册")
+            return res(1009, '用户名 '+vals['username']+' 已被注册')
+        # 邮箱不得重复
+        if email_exist(vals['email']):
+            return res(1013, '邮箱 '+vals['email']+' 已被注册')
         # 密码强度检查
         if not password_check(vals['password']):
             return JsonResponse({'errno': 1003, 'msg': '密码太弱'})
@@ -124,7 +134,7 @@ def get_user_info(request):
     if not login_check(request):
         return need_login()
     user = User.objects.get(userID=request.session['userID'])
-    return JsonResponse({'errno': 1000, 'msg': '获取个人信息成功',
+    return JsonResponse({'errno': 0, 'msg': '获取个人信息成功',
                          'user_info': {
                              'userID': user.userID,
                              'username': user.username,
@@ -155,7 +165,7 @@ def edit_user_info(request):
         return res(1010, "用户名已被注册")
     user.password = make_password(user.password)
     user.save()
-    return res(1000, '编辑个人信息成功')
+    return res(0, '编辑个人信息成功')
 
 
 @csrf_exempt
@@ -213,6 +223,7 @@ def debug_get_login_list(request):
         login_list.append(key)
     return JsonResponse(login_list, safe=False)
 
+
 # 清除所有注册用户
 @csrf_exempt
 def debug_clear_user(request):
@@ -230,5 +241,3 @@ def debug_everyone_logout(request):
         se.flush()
     login_dic.clear()
     return res(10086, "所有人都登出了")
-
-
