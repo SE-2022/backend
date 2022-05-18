@@ -40,7 +40,7 @@ class File(models.Model):
     # dirID = models.ForeignKey(Directory, to_field='dirID', on_delete=models.CASCADE)
     fatherID = models.IntegerField(default=0)
     commentFul = models.BooleanField(default=True)
-    content = models.TextField()
+    content = models.TextField(null=True)
     isDelete = models.BooleanField(default=False)  # If the file has been deleted, this value is True.
 
     class Meta:

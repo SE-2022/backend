@@ -12,5 +12,6 @@ urlpatterns = [
     path('recyclebin', get_filelist_of_recycle_bin),
     path('completelydelete', completely_delete_file),
     path('restorefile', restore_file),
-    path('readfile', read_file)
+    path('readfile', read_file),
+    path('changefilename',change_file_name)
 ]

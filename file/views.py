@@ -84,7 +84,7 @@ def create_file(request):
                 return JsonResponse({'errno': 2001, 'msg': "文件名不得为空"})
             except Exception as e:
                 return JsonResponse({'errno': 2000, 'msg': repr(e)})
-            file = File.objects.filter(file_name=file_name, isDelete=False)
+            file = File.objects.filter(file_name=file_name, isDelete=False, user=user)
             if file.count():
                 return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
             else:
@@ -138,6 +138,7 @@ def read_file(request):
               'create_time': file.create_time,
               'last_modify_time': file.last_modify_time,
               'author': file.user.username,
+              'file_content': file.content,
               'msg': '成功打开文件' + file.file_name,
               }
     return JsonResponse(result)
@@ -173,6 +174,36 @@ def edit_file(request):
                   'author': file.user.username,
                   'msg': "保存成功"}
         return JsonResponse(result)
+
+
+@csrf_exempt
+def change_file_name(request):
+    if not request.method == 'POST':
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+    if not login_check(request):
+        return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    try:
+        fileid = request.POST.get('fileid')
+        new_name = request.POST.get('newname')
+    except ValueError:
+        return JsonResponse({'errno': 2025, 'msg': "文件名不得为空"})
+    except Exception as e:
+        return JsonResponse({'errno': 2000, 'msg': repr(e)})
+    user = User.objects.get(userID=request.session['userID'])
+    file = File.objects.get(fileID=fileid)
+    file_tmp = File.objects.filter(file_name=new_name, isDelete=False, isDir=file.isDir, user=user)
+    if new_name != file.file_name and file_tmp.count() >= 1:
+        return JsonResponse({'errno': 2026, 'msg': "文件名重复"})
+    file.file_name = new_name
+    file.save()
+    result = {'errno': 0,
+              'fileName': file.file_name,
+              'create_time': file.create_time,
+              'last_modify_time': file.last_modify_time,
+              'author': file.user.username,
+              'msg': "修改成功"
+              }
+    return JsonResponse(result)
 
 
 @csrf_exempt
