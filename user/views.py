@@ -27,6 +27,11 @@ def username_exist(username):
     return len(list(user_list)) != 0
 
 
+def email_exist(email):
+    email_list = User.objects.filter(email=email)
+    return len(email_list) != 0
+
+
 login_dic = {}
 
 
@@ -40,7 +45,10 @@ def register(request):
             return lack_err(lack_list)
         # 用户名不得重复
         if username_exist(vals['username']):
-            return res(1009, "用户名已被注册")
+            return res(1009, '用户名 '+vals['username']+' 已被注册')
+        # 邮箱不得重复
+        if email_exist(vals['email']):
+            return res(1013, '邮箱 '+vals['email']+' 已被注册')
         # 密码强度检查
         if not password_check(vals['password']):
             return JsonResponse({'errno': 1003, 'msg': '密码太弱'})
