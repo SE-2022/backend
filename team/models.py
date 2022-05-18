@@ -21,6 +21,19 @@ class Team(models.Model):
 
     def to_dic(self):
         return {
-            'team_name':self.team_name,
-            'manager':self.manager.username,
+            'team_name': self.team_name,
+            'manager': self.manager.username,
         }
+
+
+class Team_User(models.Model):
+    team = models.ForeignKey(
+        Team,
+        to_field='teamID',
+        on_delete=models.CASCADE,
+    )
+    user = models.ForeignKey(
+        User,
+        to_field='userID',
+        on_delete=models.CASCADE,
+    )

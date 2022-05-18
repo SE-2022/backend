@@ -10,7 +10,9 @@ urlpatterns = [
     path('edit_user_info', edit_user_info),
     path('get_user_avatar', get_user_avatar),
     path('edit_user_avatar', edit_user_avatar),
+    path('get_status', get_status),
     path('debug_get_user_list', debug_get_user_list),
     path('debug_clear_user', debug_clear_user),
-    path('debug_status', debug_status),
+    path('debug_get_login_list', debug_get_login_list),
+    path('debug_everyone_logout', debug_everyone_logout),
 ]

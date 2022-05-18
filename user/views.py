@@ -26,6 +26,7 @@ def username_exist(username):
     user_list = User.objects.filter(username=username)
     return len(list(user_list)) != 0
 
+login_dic = {}
 
 @csrf_exempt
 def register(request):
@@ -78,15 +79,14 @@ def register(request):
 @csrf_exempt
 def login(request):
     if request.method == 'POST':
-        if login_check(request):
-            return res(1011, '已经登录，不能再次登录')
+        # if login_check(request):
+        #     return res(1011, '当前客户端已经处于登录状态，这种情况下前端不应该给用户再次登录的机会，我想这是一个前端的bug')
         # print(request.session['userID'])
         # 获取信息
         vals = post_getAll(request, 'username', 'password')
         lack, lack_list = check_lack(vals)
         if lack:
             return lack_err(lack_list)
-        # 检查
         try:
             user = User.objects.get(username=vals['username'])
         except ObjectDoesNotExist:
@@ -97,6 +97,7 @@ def login(request):
             return res(1005, '密码错误')
         # 通过检查
         request.session['userID'] = user.userID
+        login_dic[user.username] = request.session
         return res(0, '登陆成功')
     else:
         return res(2, '请求方式错误')
@@ -107,7 +108,10 @@ def logout(request):
     if request.method == 'POST':
         if not login_check(request):
             return res(3, '未登录不能登出')
+        userID = request.session['userID']
+        user = User.objects.get(userID=userID)
         request.session.flush()
+        login_dic.pop(user.username)
         return res(0, '注销成功')
     else:
         return res(2, '请求方式错误')
@@ -181,15 +185,16 @@ def edit_user_avatar(request):
 
 
 @csrf_exempt
-def debug_status(request):
+def get_status(request):
     if login_check(request):
         return JsonResponse({
-            'login yet': True,
-            'user': User.objects.get(userID=request.session['userID']).username
+            'login': True,
+            'username': User.objects.get(userID=request.session['userID']).username
         })
-    return JsonResponse({'login yet': False})
+    return JsonResponse({'login': False})
 
 
+# 获取全部注册用户的列表
 @csrf_exempt
 def debug_get_user_list(request):
     if request.method != 'POST':
@@ -202,6 +207,14 @@ def debug_get_user_list(request):
 
 
 @csrf_exempt
+def debug_get_login_list(request):
+    login_list = []
+    for key in login_dic.keys():
+        login_list.append(key)
+    return JsonResponse(login_list, safe=False)
+
+# 清除所有注册用户
+@csrf_exempt
 def debug_clear_user(request):
     user_list = User.objects.all()
     cnt = 0
@@ -209,3 +222,13 @@ def debug_clear_user(request):
         user.delete()
         cnt += 1
     return res(10086, '成功删除' + str(cnt) + '个用户')
+
+
+@csrf_exempt
+def debug_everyone_logout(request):
+    for name, se in login_dic.items():
+        se.flush()
+    login_dic.clear()
+    return res(10086, "所有人都登出了")
+
+
