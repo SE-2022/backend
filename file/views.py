@@ -85,30 +85,30 @@ def create_file(request):
             except Exception as e:
                 return JsonResponse({'errno': 2000, 'msg': repr(e)})
             file = File.objects.filter(file_name=file_name, isDelete=False, user=user)
-            if file.count():
-                return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
-            else:
-                username = user.username
-                new_file = File(fatherID=father_id,
-                                isDir=file_type,
-                                file_name=file_name,
-                                username=username,
-                                user=user,
-                                commentFul=comment,
-                                # TeamID=team,
-                                isDelete=False)
-                # How to acquire the directory the file belong to?
-                new_file.save()
-                result = {'errno': 0,
-                          "fileID": new_file.fileID,
-                          'fileName': new_file.file_name,
-                          'create_time': new_file.create_time,
-                          'last_modify_time': new_file.last_modify_time,
-                          'commentFul': new_file.commentFul,
-                          'isDir': new_file.isDir,
-                          'author': new_file.user.username,
-                          'msg': "新建成功"}
-                return JsonResponse(result)
+            # if file.count():
+            #     return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
+            # else:
+            username = user.username
+            new_file = File(fatherID=father_id,
+                            isDir=file_type,
+                            file_name=file_name,
+                            username=username,
+                            user=user,
+                            commentFul=comment,
+                            # TeamID=team,
+                            isDelete=False)
+            # How to acquire the directory the file belong to?
+            new_file.save()
+            result = {'errno': 0,
+                        "fileID": new_file.fileID,
+                        'fileName': new_file.file_name,
+                        'create_time': new_file.create_time,
+                        'last_modify_time': new_file.last_modify_time,
+                        'commentFul': new_file.commentFul,
+                        'isDir': new_file.isDir,
+                        'author': new_file.user.username,
+                        'msg': "新建成功"}
+            return JsonResponse(result)
 
         else:
             return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
