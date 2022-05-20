@@ -63,3 +63,4 @@ class Comment(models.Model):
     comment_time = models.DateTimeField(auto_now_add=True)
     comment_fileID = models.ForeignKey(File, to_field='fileID', on_delete=models.CASCADE)
     comment_user = models.ForeignKey(User, to_field='userID', on_delete=models.CASCADE)
+    content = models.TextField()

@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'file',
     'message',
     'team',
+    'favourite'
 ]
 
 MIDDLEWARE = [
