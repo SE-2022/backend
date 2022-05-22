@@ -21,4 +21,5 @@ urlpatterns = [
     path('api/file/', include(('file.urls', 'file'))),
     path('api/team/', include(('team.urls', 'team'))),
     path('api/message/', include(('message.urls', 'message'))),
+    path('api/favourite/', include(('favourite.urls', 'favourite')))
 ]

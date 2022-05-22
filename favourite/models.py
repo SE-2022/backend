@@ -20,3 +20,4 @@ class TagFile(models.Model):
     id = models.AutoField(primary_key=True, editable=False, null=False)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
     file = models.ForeignKey(File, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
