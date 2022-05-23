@@ -37,6 +37,9 @@ def create_team(request):
     lack, lack_list = check_lack(vals)
     if lack:
         return lack_err(lack_list)
+    # 团队名不可为空
+    if len(vals['team_name']) == 0:
+        return res(3007, "团队名不能为空")
     # 团队名不可重复
     team_list = Team.objects.filter(team_name=vals['team_name'])
     if len(team_list) > 0:
@@ -79,10 +82,10 @@ def my_team_list(request):
     # print(len(entry_list))
     team_list = []
     for entry in entry_list:
-        t = {}
-        t['team_name'] = entry.team.team_name
-        t['manager'] = entry.team.manager.username
-        t['create_time'] = entry.team.create_time
+        t = {
+            'team_name': entry.team.team_name,
+            'manager': entry.team.manager.username,
+            'create_time': entry.team.create_time.date()}
         team_list.append(t)
     return JsonResponse({'errno': 0, 'msg': '成功获取团队列表', 'team_list': team_list})
 
@@ -115,7 +118,7 @@ def apply_for_joining_team(request):
     # 获取本用户
     user = User.objects.get(userID=vals['userID'])
     # 查找本用户是否已经在此团队中
-    if len(Team_User.objects.filter(user=user, team=team))>0:
+    if len(Team_User.objects.filter(user=user, team=team)) > 0:
         return res(3003, '用户 {} 已经在团队 {} 中'.format(user.username, team.team_name))
     Team_User.objects.create(user=user, team=team)
     return res(0, '用户 {} 成功加入团队 {}'.format(user.username, team.team_name))
@@ -148,8 +151,15 @@ def invite(request):
     # 获取本用户
     me = User.objects.get(userID=vals['userID'])
     # 被邀请的用户不能已经在这个团队中
-
+    if len(Team_User.objects.filter(team=team, user=user)) > 0:
+        return res(3003, "用户 "+vals['username']+" 已经在团队 "+vals['team_name']+" 中")
     # 发出邀请的用户必须是此团队的管理员
+    if team.manager.userID != me.userID:
+        return res(3004, "目前登录的用户 %s 不是团队 %s 的管理员，只有管理员能发出邀请"
+                   % (me.username, vals['team_name']))
+    # 检查通过，实施修改
+    Team_User.objects.create(team=team, user=user)
+    return res(0, "用户 %s 已加入团队 %s" % (vals['username'], vals['team_name']))
 
 
 # 获取团队信息
