@@ -79,7 +79,11 @@ def my_team_list(request):
     # print(len(entry_list))
     team_list = []
     for entry in entry_list:
-        team_list.append(entry.team.team_name)
+        t = {}
+        t['team_name'] = entry.team.team_name
+        t['manager'] = entry.team.manager.username
+        t['create_time'] = entry.team.create_time
+        team_list.append(t)
     return JsonResponse({'errno': 0, 'msg': '成功获取团队列表', 'team_list': team_list})
 
 
@@ -115,6 +119,37 @@ def apply_for_joining_team(request):
         return res(3003, '用户 {} 已经在团队 {} 中'.format(user.username, team.team_name))
     Team_User.objects.create(user=user, team=team)
     return res(0, '用户 {} 成功加入团队 {}'.format(user.username, team.team_name))
+
+
+@csrf_exempt
+def invite(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    # 获取信息，并检查是否缺项
+    vals = post_getAll(request, 'team_name', 'username')
+    vals['userID'] = request.session['userID']
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    # 获取用户对象
+    found, user = get_user(vals['username'])
+    if not found:
+        return user
+    # 获取团队对象
+    try:
+        team = Team.objects.get(team_name=vals['team_name'])
+    except ObjectDoesNotExist:
+        return res(3006, "不存在 "+vals['team_name']+" 这个团队")
+    except MultipleObjectsReturned:
+        return res(1, "有多个团队具有名称 "+vals['team_name']+" ，这是一个bug")
+    # 获取本用户
+    me = User.objects.get(userID=vals['userID'])
+    # 被邀请的用户不能已经在这个团队中
+
+    # 发出邀请的用户必须是此团队的管理员
 
 
 # 获取团队信息

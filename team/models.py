@@ -7,6 +7,7 @@ class Team(models.Model):
     teamID = models.AutoField(primary_key=True, editable=False)
     team_name = models.CharField(max_length=50)
     team_avatar = models.ImageField(upload_to='team_avatar')
+    create_time = models.DateTimeField(auto_now_add=True)
     manager = models.ForeignKey(
         User,
         to_field='userID',

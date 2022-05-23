@@ -1,4 +1,7 @@
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.http import JsonResponse
+
+from user.models import User
 
 
 # ----------------- 实用小工具 ----------------------
@@ -30,6 +33,18 @@ def check_lack(obj_dic):
     if len(lack_list) > 0:
         return True, lack_list
     return False, None
+
+
+# 从用户名获取用户对象
+def get_user(username):
+    username = str(username)
+    try:
+        user = User.objects.get(username=username)
+    except ObjectDoesNotExist:
+        return False, res(3005, "不存在 "+username+" 这个用户")
+    except MultipleObjectsReturned:
+        return False, res(1, "有多个用户具有名称 "+username+" ，这是一个bug")
+    return True, user
 
 
 # ------------------ 通用异常 -----------------------
