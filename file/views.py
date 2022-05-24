@@ -100,14 +100,14 @@ def create_file(request):
             # How to acquire the directory the file belong to?
             new_file.save()
             result = {'errno': 0,
-                        "fileID": new_file.fileID,
-                        'fileName': new_file.file_name,
-                        'create_time': new_file.create_time,
-                        'last_modify_time': new_file.last_modify_time,
-                        'commentFul': new_file.commentFul,
-                        'isDir': new_file.isDir,
-                        'author': new_file.user.username,
-                        'msg': "新建成功"}
+                      "fileID": new_file.fileID,
+                      'fileName': new_file.file_name,
+                      'create_time': new_file.create_time,
+                      'last_modify_time': new_file.last_modify_time,
+                      'commentFul': new_file.commentFul,
+                      'isDir': new_file.isDir,
+                      'author': new_file.user.username,
+                      'msg': "新建成功"}
             return JsonResponse(result)
 
         else:
@@ -157,8 +157,8 @@ def edit_file(request):
         return JsonResponse({'errno': 2011, 'msg': "无法获取文件信息"})
     except Exception as e:
         return JsonResponse({'errno': 2000, 'msg': repr(e)})
-
-    file = File.objects.get(fileID=fileid)
+    user = User.objects.get(userID=request.session['userID'])
+    file = File.objects.get(fileID=fileid, user=user)
 
     if file.isDelete:
         return JsonResponse({'errno': 2012, 'msg': "文件已被删除"})
@@ -190,7 +190,7 @@ def change_file_name(request):
     except Exception as e:
         return JsonResponse({'errno': 2000, 'msg': repr(e)})
     user = User.objects.get(userID=request.session['userID'])
-    file = File.objects.get(fileID=fileid)
+    file = File.objects.get(fileID=fileid, user=user)
     file_tmp = File.objects.filter(file_name=new_name, isDelete=False, isDir=file.isDir, user=user)
     if new_name != file.file_name and file_tmp.count() >= 1:
         return JsonResponse({'errno': 2026, 'msg': "文件名重复"})
@@ -218,7 +218,7 @@ def delete_file(request):
             except Exception as e:
                 return JsonResponse({'errno': 2000, 'msg': repr(e)})
             user = User.objects.get(userID=request.session['userID'])
-            file = File.objects.get(fileID=fileid)
+            file = File.objects.get(fileID=fileid, user=user)
             if file.isDelete:
                 return JsonResponse({'errno': 2004, 'msg': "文件已被删除"})
             else:
@@ -300,7 +300,7 @@ def get_file_list_of_dir(request):
         except Exception as e:
             return JsonResponse({'errno': 2000, 'msg': repr(e)})
         user = User.objects.get(userID=request.session['userID'])
-        father_dir = File.objects.get(fileID=father_id)
+        father_dir = File.objects.get(fileID=father_id, user=user)
         # if father_dir.isDelete:
         #     return JsonResponse({'errno': 2016, 'msg': "文件夹已被删除"})
         if not father_dir.isDir:
@@ -339,9 +339,8 @@ def completely_delete_file(request):
             return JsonResponse({'errno': 2018, 'msg': "文件信息获取失败"})
         except Exception as e:
             return JsonResponse({'errno': 2000, 'msg': repr(e)})
-
-        file = File.objects.get(fileID=fileid)
         user = User.objects.get(userID=request.session['userID'])
+        file = File.objects.get(fileID=fileid,user=user)
         if not file.isDelete:
             return JsonResponse({'errno': 2019, 'msg': "文件未删除，无法执行彻底删除操作"})
         if file.isDir:
@@ -385,7 +384,7 @@ def restore_file(request):
             return JsonResponse({'errno': 2000, 'msg': repr(e)})
 
         user = User.objects.get(userID=request.session['userID'])
-        file = File.objects.get(fileID=fileid)
+        file = File.objects.get(fileID=fileid,user=user)
         if not file.isDelete:
             return JsonResponse({'errno': 2021, 'msg': "文件不在回收站中"})
         if file.isDir:
