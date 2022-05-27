@@ -3,9 +3,10 @@ from django.shortcuts import render
 
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from file.models import File
-from team.models import Team
+from team.models import Team, Team_User
 from user.models import User
 from user.views import login_check, res
 
@@ -397,3 +398,35 @@ def restore_file(request):
         return JsonResponse(result)
     else:
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
+# 所有访问文件的操作都需要进行此检查
+# 估计要塞到文件这边的所有函数里面
+def team_check(request):
+    fileid = request.POST.get('fileid')
+    if fileid is None:  # 没有fileid字段？
+        return True, None
+    # 获得file对象
+    try:
+        file = File.objects.get(fileID=fileid)
+    except: # 本函数不管这种情况
+        return True, None
+    # 检查file是否属于团队
+    if file.team is None:
+        return True, None
+    # 获得user对象
+    userID = request.session.get['userID']
+    user = User.objects.get(userID=userID)
+    # 检查user是否属于file所在的团队
+    try:
+        Team_User.objects.get(team=file.team, user=user)
+    except ObjectDoesNotExist:
+        return False, res(2101, "此文件属于某个团队，而您不是这个团队的成员")
+    except:
+        return False, res(1, "不应该出这个问题")
+    return True, None
+
+# 创建团队文件，是在函数create_file的基础上修改，还是重写一个？
+@csrf_exempt
+def create_team_file(request):
+    pass

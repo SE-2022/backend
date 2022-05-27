@@ -201,6 +201,22 @@ def team_info(request):
                              'user_list': username_list,
                          }})
 
+
+@csrf_exempt
+def set_file_permission(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    # 获取信息，并检查是否缺项
+    vals = post_getAll(request, 'team_name')
+    vals['userID'] = request.session['userID']
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+
+
 @csrf_exempt
 def debug_all_team(request):
     team_list = Team.objects.all()
@@ -217,3 +233,9 @@ def debug_clear_team(request):
     for team in team_list:
         team.delete()
     return res(10086, '团队已清空')
+
+
+# 团队文件的相关操作和普通文件操作非常相似
+# 区别只在于request中
+def team_check(request):
+    pass
