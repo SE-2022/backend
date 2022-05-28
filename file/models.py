@@ -4,20 +4,6 @@ from team.models import Team
 from user.models import User
 
 
-# class Directory(models.Model):
-#     dir_name = models.CharField(max_length=100)
-#     dirID = models.AutoField(primary_key=True, editable=False, null=False)
-#     create_time = models.DateTimeField(auto_now_add=True)
-#     file_num = models.IntegerField(default=0)
-#     userID = models.ForeignKey(User, on_delete=models.CASCADE, to_field='userID')
-#
-#     class Meta:
-#         db_table = 'Directory'
-#
-#     def __unicode__(self):
-#         return 'dir_name:%s|file_num:%s' % (self.dir_name, self.file_num)
-
-
 class File(models.Model):
     fileID = models.AutoField(primary_key=True, editable=False, null=False)
     isDir = models.BooleanField(null=False, default=False)

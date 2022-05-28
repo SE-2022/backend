@@ -13,6 +13,9 @@ urlpatterns = [
     path('completelydelete', completely_delete_file),
     path('restorefile', restore_file),
     path('readfile', read_file),
-    path('changefilename',change_file_name)
-
+    path('changefilename', change_file_name),
+    path('setcomment', set_comment_to),
+    path('changecommentcharacter', change_comment_character),
+    path('deletecomment', delete_comment),
+    path('showcomment', show_comment_list)
 ]

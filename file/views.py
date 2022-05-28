@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
-from file.models import File
+from file.models import File, Comment
 from team.models import Team, Team_User
 from user.models import User
 from user.views import login_check, res
@@ -341,7 +341,7 @@ def completely_delete_file(request):
         except Exception as e:
             return JsonResponse({'errno': 2000, 'msg': repr(e)})
         user = User.objects.get(userID=request.session['userID'])
-        file = File.objects.get(fileID=fileid,user=user)
+        file = File.objects.get(fileID=fileid, user=user)
         if not file.isDelete:
             return JsonResponse({'errno': 2019, 'msg': "文件未删除，无法执行彻底删除操作"})
         if file.isDir:
@@ -385,7 +385,7 @@ def restore_file(request):
             return JsonResponse({'errno': 2000, 'msg': repr(e)})
 
         user = User.objects.get(userID=request.session['userID'])
-        file = File.objects.get(fileID=fileid,user=user)
+        file = File.objects.get(fileID=fileid, user=user)
         if not file.isDelete:
             return JsonResponse({'errno': 2021, 'msg': "文件不在回收站中"})
         if file.isDir:
@@ -409,7 +409,7 @@ def team_check(request):
     # 获得file对象
     try:
         file = File.objects.get(fileID=fileid)
-    except: # 本函数不管这种情况
+    except:  # 本函数不管这种情况
         return True, None
     # 检查file是否属于团队
     if file.team is None:
@@ -426,7 +426,105 @@ def team_check(request):
         return False, res(1, "不应该出这个问题")
     return True, None
 
+
 # 创建团队文件，是在函数create_file的基础上修改，还是重写一个？
 @csrf_exempt
 def create_team_file(request):
     pass
+
+
+@csrf_exempt
+def set_comment_to(request):
+    if request.method == 'POST':
+        if not login_check(request):
+            return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+        try:
+            fileid = request.POST.get('fileid')
+        except ValueError:
+            return JsonResponse({'errno': 2027, 'msg': "无法获取文件信息"})
+        user = User.objects.get(userID=request.session['userID'])
+        try:
+            file = File.objects.get(fileID=fileid, isDelete=False, isDir=False)
+        except ObjectDoesNotExist:
+            return JsonResponse({'errno': 2028, 'msg': "文件不存在"})
+        if not file.commentFul:
+            return JsonResponse({'errno': 2029, 'msg': "该文章不可评论哟～"})
+
+        comment_content = request.POST.get('comment_content')
+        if comment_content is None:
+            return JsonResponse({'errno': 2030, 'msg': "评论内容不得为空"})
+        comment = Comment(content=comment_content, comment_fileID=file, comment_user=user)
+        comment.save()
+        return JsonResponse(
+            {'errno': 0, 'msg': "感谢您的评论", 'commentID': comment.commentID, 'comment_time': comment.comment_time,
+             'content': comment.content, 'commenter': comment.comment_user.username})
+    else:
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
+@csrf_exempt
+def change_comment_character(request):
+    if request.method == 'POST':
+        if not login_check(request):
+            return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+        try:
+            fileid = request.POST.get('fileid')
+            new_state = request.POST.get('commentFul')
+        except ValueError:
+            return JsonResponse({'errno': 2031, 'msg': "获取信息失败"})
+        user = User.objects.get(userID=request.session['userID'])
+        try:
+            file = File.objects.get(fileID=fileid, user=user, isDelete=False, isDir=False)
+        except ObjectDoesNotExist:
+            return JsonResponse({'errno': 2032, 'msg': "文件不存在"})
+        if file.commentFul == new_state:
+            if new_state:
+                return JsonResponse({'errno': 2033, 'msg': "评论功能已开启"})
+            else:
+                return JsonResponse({'errno': 2034, 'msg': "评论功能已关闭"})
+        file.commentFul = new_state
+        file.save()
+        return JsonResponse({'errno': 0, 'msg': "修改成功"})
+    else:
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
+@csrf_exempt
+def delete_comment(request):
+    if request.method == 'POST':
+        if not login_check(request):
+            return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+        user = User.objects.get(userID=request.session['userID'])
+        try:
+            comment_id = request.POST.get('comment_id')
+            comment = Comment.objects.get(commentID=comment_id)
+        except ObjectDoesNotExist:
+            return JsonResponse({'errno': 2035, 'msg': "无法获取评论信息"})
+        if user == comment.comment_fileID.user or user == comment.comment_user:
+            comment.delete()
+            return JsonResponse({'errno': 0, 'msg': "删除成功"})
+        else:
+            return JsonResponse({'errno': 2036, 'msg': "您无法删除该评论"})
+    else:
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
+@csrf_exempt
+def show_comment_list(request):
+    if request.method == 'POST':
+        # if not login_check(request):
+        #     return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+        # user = User.objects.get(userID=request.session['userID'])
+        try:
+            fileid = request.POST.get('fileid')
+            file = File.objects.get(fileID=fileid, isDelete=False, isDir=False)
+        except ObjectDoesNotExist:
+            return JsonResponse({'errno': 2037, 'msg': "无法获取文件信息"})
+        comment_list = Comment.objects.filter(comment_fileID=file)
+        comments = []
+        for i in comment_list:
+            comments.append({'commentID': i.commentID, 'comment_time': i.comment_time,
+                             'content': i.content, 'commenter': i.comment_user.username})
+        return JsonResponse({'errno': 0, 'comment_list': comments})
+    else:
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
