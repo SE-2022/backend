@@ -28,6 +28,10 @@ class File(models.Model):
     commentFul = models.BooleanField(default=True)
     content = models.CharField(max_length=65535, null=True)
     isDelete = models.BooleanField(default=False)  # If the file has been deleted, this value is True.
+    # 文件互斥访问
+    # 当有人以可写权限打开此文件，其它用户就只能以只读权限打开
+    # 只读和可写两种权限的区别，在后端看只是能不能保存修改
+    using = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='using')
 
     class Meta:
         db_table = 'File'
@@ -50,3 +54,16 @@ class Comment(models.Model):
     comment_fileID = models.ForeignKey(File, to_field='fileID', on_delete=models.CASCADE)
     comment_user = models.ForeignKey(User, to_field='userID', on_delete=models.CASCADE)
     content = models.TextField()
+
+
+# 团队文件权限表
+class File_Perm(models.Model):
+    file = models.ForeignKey(
+        File,
+        on_delete=models.CASCADE,
+        # related_name='xx',
+        null=True,
+    )
+    # 0：所有人读写
+    # 1：管理员读写，其余人只读
+    perm = models.IntegerField(default=0)
