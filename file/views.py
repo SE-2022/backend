@@ -5,10 +5,11 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
-from file.models import File, Comment, File_Perm
+from file.models import File, Comment
 from team.models import Team, Team_User
 from user.models import User
 from user.views import login_check, res
+from file.lock import *
 
 
 # from file.models import Directory
@@ -117,18 +118,111 @@ def create_file(request):
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
 
 
+def team_contain_user(team, user):
+    return len(Team_User.objects.filter(team=team, user=user)) > 0
+
+# 创建团队文件
+@csrf_exempt
+def create_team_file(request):
+    if request.method == 'POST':
+        if login_check(request):
+            try:
+                file_name = request.POST.get('file_name')
+                user = User.objects.get(userID=request.session['userID'])
+                comment = request.POST.get('commentFul')
+                file_type = request.POST.get('isDir')
+                father_id = request.POST.get('father_id')  # 返回当前文件夹的父节点编号，若当前在根目录下，则返回0
+                team_name = request.POST.get('team_name')
+            except ValueError:
+                return JsonResponse({'errno': 2001, 'msg': "文件名不得为空"})
+            except Exception as e:
+                return JsonResponse({'errno': 2000, 'msg': repr(e)})
+            file = File.objects.filter(file_name=file_name, isDelete=False, user=user)
+            try:
+                team = Team.objects.get(team_name=team_name)
+            except:
+                return res(2109, "团队名 "+team_name+" 不属于任何团队")
+            if not team_contain_user(team, user):
+                return res(2101, '用户不属于团队 '+team_name)
+            father = File.objects.get(fileID=father_id)
+            if father.team_id != team.teamID:
+                return res(2108, '父文件所属团队，与您想创建文件的团队，不匹配')
+
+            # if file.count():
+            #     return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
+            # else:
+            username = user.username
+            new_file = File(fatherID=father_id,
+                            isDir=file_type,
+                            file_name=file_name,
+                            username=username,
+                            user=user,
+                            commentFul=comment,
+                            team=team,
+                            isDelete=False)
+            # How to acquire the directory the file belong to?
+            new_file.save()
+            result = {'errno': 0,
+                      "fileID": new_file.fileID,
+                      'fileName': new_file.file_name,
+                      'create_time': new_file.create_time,
+                      'last_modify_time': new_file.last_modify_time,
+                      'commentFul': new_file.commentFul,
+                      'isDir': new_file.isDir,
+                      'author': new_file.user.username,
+                      'team': team.team_name,
+                      'msg': "新建成功"}
+            return JsonResponse(result)
+        else:
+            return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    else:
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
+# 管理员修改团队文件权限
+@csrf_exempt
+def modify_team_file_perm(request):
+    if not request.method == 'POST':
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+    if not login_check(request):
+        return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    user = User.objects.get(userID=request.session['userID'])
+    file = File.objects.get(fileID=request.POST['fileid'])
+    perm = request.POST['perm']
+    good, result = team_check(request)
+    if not good:
+        return result
+    if file.team is None:
+        return res(2105, "此文件不是团队文件")
+    if file.team.manager.userID != user.userID:
+        return res(2106, "需要修改权限请联系团队管理员 "+file.team.manager.username)
+    if perm != 0 and perm != 1:
+        return res(2107, "权限必须为0（读写）或1（只读），您提供了"+str(perm))
+    file.team_perm = perm
+    file.save()
+    return res(2000, "成功修改权限")
+
+
 @csrf_exempt
 def read_file(request):
     if not request.method == 'POST':
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
     if not login_check(request):
         return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    good, result = team_check(request)
+    if not good:
+        return result
     try:
         fileid = request.POST.get('fileid')
     except ValueError:
         return JsonResponse({'errno': 2022, 'msg': "获取文件信息失败，无法查看文件内容"})
 
-    file = File.objects.get(fileID=fileid, user=User.objects.get(userID=request.session['userID']))
+    try:
+        file = File.objects.get(fileID=fileid)
+    except ObjectDoesNotExist:
+        return res(1, "没找到文件")
+    except MultipleObjectsReturned:
+        return res(1, "找到多个文件")
     if file.isDir:
         return JsonResponse({'errno': 2023, 'msg': "不支持阅读文件夹内容"})
     if file.isDelete:
@@ -136,13 +230,20 @@ def read_file(request):
 
     # ------------互斥访问-------------
     user = User.objects.get(userID=request.session['userID'])
-    username = ""
+    username = "?????"
     writable = False
-    if file.user is None:
-        file.using = user
-        writable = True
-        file.save()
-        username = user.username
+    if file.using is None:
+        if file.team is None:  # 个人文件
+            if lock(file, user):
+                writable = True
+        elif (not is_lock(file)) and file.team_perm == 0:  # 团队文件 and 尚未锁定 and 用户有写权限
+            if lock(file, user):
+                writable = True
+        else:
+            print('???')
+    else:
+        username = file.using.username
+    # ------------互斥访问结束-------------
 
     result = {'errno': 0,
               'fileName': file.file_name,
@@ -152,7 +253,7 @@ def read_file(request):
               'file_content': file.content,
               'msg': '成功打开文件' + file.file_name,
 
-              'writable': writable,
+              'writable': writable,  # 是否可写
               'using': username,  # 使用者的用户名
               }
     return JsonResponse(result)
@@ -164,6 +265,9 @@ def edit_file(request):
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
     if not login_check(request):
         return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    good, result = team_check(request)
+    if not good:
+        return result
     try:
         fileid = request.POST.get('fileid')
         file_content = request.POST.get('file_content')
@@ -199,15 +303,19 @@ def close_file(request):
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
     if not login_check(request):
         return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    good, result = team_check(request)
+    if not good:
+        return result
     try:
         fileid = request.POST.get('fileid')
     except ValueError:
         return JsonResponse({'errno': 2011, 'msg': "无法获取文件信息"})
     file = File.objects.get(fileID=fileid)
-    if file.using.userID != request.session['userID']:
-        return res(2104, '目前并未持有此文件')
-    file.using = None
-    return res(0, '成功解除对文件 ' + file.file_name + ' 的持有')
+    user = User.objects.get(userID=request.session['userID'])
+    print(type(user))
+    if unlock(file, user):
+        return res(0, '成功解除对文件 ' + file.file_name + ' 的锁定')
+    return res(1, '没能解锁此文件（可能由于此用户并没有持有锁')
 
 
 @csrf_exempt
@@ -216,6 +324,9 @@ def change_file_name(request):
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
     if not login_check(request):
         return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    good, result = team_check(request)
+    if not good:
+        return result
     try:
         fileid = request.POST.get('fileid')
         new_name = request.POST.get('newname')
@@ -251,6 +362,9 @@ def delete_file(request):
                 return JsonResponse({'errno': 2003, 'msg': "文件不存在"})
             except Exception as e:
                 return JsonResponse({'errno': 2000, 'msg': repr(e)})
+            good, result = team_check(request)
+            if not good:
+                return result
             user = User.objects.get(userID=request.session['userID'])
             file = File.objects.get(fileID=fileid, user=user)
             if file.isDelete:
@@ -373,6 +487,9 @@ def completely_delete_file(request):
             return JsonResponse({'errno': 2018, 'msg': "文件信息获取失败"})
         except Exception as e:
             return JsonResponse({'errno': 2000, 'msg': repr(e)})
+        good, result = team_check(request)
+        if not good:
+            return result
         user = User.objects.get(userID=request.session['userID'])
         file = File.objects.get(fileID=fileid, user=user)
         if not file.isDelete:
@@ -433,8 +550,7 @@ def restore_file(request):
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
 
 
-# 所有访问文件的操作都需要进行此检查
-# 估计要塞到文件这边的所有函数里面
+# 所有访问文件的操作都需要进行此检查，确保团队文件只能由团队成员操作
 def team_check(request):
     fileid = request.POST.get('fileid')
     if fileid is None:  # 没有fileid字段？
@@ -448,7 +564,7 @@ def team_check(request):
     if file.team is None:
         return True, None
     # 获得user对象
-    userID = request.session.get['userID']
+    userID = request.session['userID']
     user = User.objects.get(userID=userID)
     # 检查user是否属于file所在的团队
     try:
@@ -460,7 +576,7 @@ def team_check(request):
     return True, None
 
 
-# 删除的时候需要进行此检查
+# 删除的时候需要进行此检查，确保普通成员不能删除只读文件
 def perm_check(request):
     fileid = request.POST.get('fileid')
     if fileid is None:  # 没有fileid字段？
@@ -478,62 +594,15 @@ def perm_check(request):
     user = User.objects.get(userID=userID)
     # 检查user是否属于file所在的团队
     try:
-        file_perm = File_Perm.objects.get(file=file)
+        file_perm = TeamFile_Perm.objects.get(file=file)
     except ObjectDoesNotExist:
         return False, res(1, "此文件属于团队，但文件权限表中找不到，这是一个bug")
     except:
         return False, res(1, "不应该出这个问题")
-    file_perm.perm
     return True, None
 
-# 创建团队文件
-@csrf_exempt
-def create_team_file(request):
-    if request.method == 'POST':
-        if login_check(request):
-            try:
-                file_name = request.POST.get('file_name')
-                user = User.objects.get(userID=request.session['userID'])
-                comment = request.POST.get('commentFul')
-                file_type = request.POST.get('isDir')
-                father_id = request.POST.get('father_id')  # 返回当前文件夹的父节点编号，若当前在根目录下，则返回0
-                team_name = request.POST.get('team_name')
-            except ValueError:
-                return JsonResponse({'errno': 2001, 'msg': "文件名不得为空"})
-            except Exception as e:
-                return JsonResponse({'errno': 2000, 'msg': repr(e)})
-            file = File.objects.filter(file_name=file_name, isDelete=False, user=user)
-            team = Team.objects.get(team_name=team_name)
-            # if file.count():
-            #     return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
-            # else:
-            username = user.username
-            new_file = File(fatherID=father_id,
-                            isDir=file_type,
-                            file_name=file_name,
-                            username=username,
-                            user=user,
-                            commentFul=comment,
-                            team=team,
-                            isDelete=False)
-            # How to acquire the directory the file belong to?
-            new_file.save()
-            File_Perm.objects.create(file=new_file)
-            result = {'errno': 0,
-                      "fileID": new_file.fileID,
-                      'fileName': new_file.file_name,
-                      'create_time': new_file.create_time,
-                      'last_modify_time': new_file.last_modify_time,
-                      'commentFul': new_file.commentFul,
-                      'isDir': new_file.isDir,
-                      'author': new_file.user.username,
-                      'team': team.team_name,
-                      'msg': "新建成功"}
-            return JsonResponse(result)
-        else:
-            return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
-    else:
-        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
 
 
 @csrf_exempt
@@ -630,3 +699,31 @@ def show_comment_list(request):
                              'content': i.content, 'commenter': i.comment_user.username})
         return JsonResponse({'errno': 0, 'comment_list': comments})
 
+
+@csrf_exempt
+def debug_all_team_file(request):
+    pass
+
+
+@csrf_exempt
+def debug_file_status(request):
+    fileid = request.POST['fileid']
+    try:
+        file = File.objects.get(fileID=fileid)
+    except ObjectDoesNotExist:
+        return JsonResponse({'msg': '文件不存在'})
+    result = {'errno': 0,
+              'fileName': file.file_name,
+              'create_time': file.create_time,
+              'last_modify_time': file.last_modify_time,
+              'author': file.user.username,
+              'file_content': file.content,
+              'lock': file.using is not None,
+              }
+    if file.team is not None:
+        result['team'] = file.team.team_name
+        result['perm'] = file.team_perm
+    if file.using is not None:
+        result['using'] = file.using.username
+
+    return JsonResponse(result)

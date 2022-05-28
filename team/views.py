@@ -85,9 +85,12 @@ def my_team_list(request):
         t = {
             'team_name': entry.team.team_name,
             'manager': entry.team.manager.username,
-            'create_time': entry.team.create_time.date()}
+            'create_time': entry.team.create_time.date(),
+            'root_file': entry.team.team_root_file_id}
         team_list.append(t)
-    return JsonResponse({'errno': 0, 'msg': '成功获取团队列表', 'team_list': team_list})
+    return JsonResponse({'errno': 0,
+                         'msg': '成功获取团队列表',
+                         'team_list': team_list})
 
 
 # 通过团队名模糊搜索团队，待实现
@@ -203,21 +206,6 @@ def team_info(request):
 
 
 @csrf_exempt
-def set_file_permission(request):
-    # 一般检查
-    if request.method != 'POST':
-        return method_err()
-    if not login_check(request):
-        return need_login()
-    # 获取信息，并检查是否缺项
-    vals = post_getAll(request, 'team_name')
-    vals['userID'] = request.session['userID']
-    lack, lack_list = check_lack(vals)
-    if lack:
-        return lack_err(lack_list)
-
-
-@csrf_exempt
 def debug_all_team(request):
     team_list = Team.objects.all()
     result = []
@@ -235,7 +223,3 @@ def debug_clear_team(request):
     return res(10086, '团队已清空')
 
 
-# 团队文件的相关操作和普通文件操作非常相似
-# 区别只在于request中
-def team_check(request):
-    pass
