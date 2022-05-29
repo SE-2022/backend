@@ -23,6 +23,7 @@ class File(models.Model):
         on_delete=models.CASCADE,
         blank=True, null=True
     )
+    team_perm = models.IntegerField(default=0)
     # dirID = models.ForeignKey(Directory, to_field='dirID', on_delete=models.CASCADE)
     fatherID = models.IntegerField(default=0)
     commentFul = models.BooleanField(default=True)
@@ -56,14 +57,14 @@ class Comment(models.Model):
     content = models.TextField()
 
 
-# 团队文件权限表
-class File_Perm(models.Model):
-    file = models.ForeignKey(
-        File,
-        on_delete=models.CASCADE,
-        # related_name='xx',
-        null=True,
-    )
-    # 0：所有人读写
-    # 1：管理员读写，其余人只读
-    perm = models.IntegerField(default=0)
+# # 团队文件权限表
+# class TeamFile_Perm(models.Model):
+#     file = models.ForeignKey(
+#         File,
+#         on_delete=models.CASCADE,
+#         # related_name='xx',
+#         null=True,
+#     )
+#     # 0：所有人读写
+#     # 1：管理员读写，其余人只读
+#     perm = models.IntegerField(default=0)
