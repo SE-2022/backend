@@ -5,7 +5,7 @@ from django import forms
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from six import BytesIO
+# from six import BytesIO
 
 from file.models import File, Comment
 from team.models import Team, Team_User
