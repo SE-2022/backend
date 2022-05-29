@@ -1,15 +1,18 @@
-from django.http import JsonResponse
+from django.forms import forms
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
-
+from django import forms
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from six import BytesIO
 
 from file.models import File, Comment, File_Perm
 from team.models import Team, Team_User
 from user.models import User
 from user.views import login_check, res
 import qrcode
+
 
 # from file.models import Directory
 
@@ -486,6 +489,7 @@ def perm_check(request):
     file_perm.perm
     return True, None
 
+
 # 创建团队文件
 @csrf_exempt
 def create_team_file(request):
@@ -630,3 +634,22 @@ def show_comment_list(request):
                              'content': i.content, 'commenter': i.comment_user.username})
         return JsonResponse({'errno': 0, 'comment_list': comments})
 
+
+# class AddForm(forms.Form):
+#     site = forms.CharField()
+
+
+# @csrf_exempt
+# def generate_qrcode(request):
+#     if request.method == 'POST':
+#         form = AddForm(request.POST)
+#         website = form['site']
+#         img = qrcode.make(str(website))
+#         buf = BytesIO()
+#         img.save(buf)
+#         image_stream = buf.getvalue()
+#         response = HttpResponse(image_stream, content_type='image/png')
+#         return response
+#     else:
+#         form1 = AddForm()
+#     return JsonResponse({'err': 99})

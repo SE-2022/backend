@@ -1,4 +1,6 @@
+from django.template.defaulttags import url
 from django.urls import path
+
 from .views import *
 
 urlpatterns = [
@@ -17,5 +19,6 @@ urlpatterns = [
     path('setcomment', set_comment_to),
     path('changecommentcharacter', change_comment_character),
     path('deletecomment', delete_comment),
-    path('showcomment', show_comment_list)
+    path('showcomment', show_comment_list),
+    # url('^qrcode/(.+)$', generate_qrcode)
 ]

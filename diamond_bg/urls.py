@@ -14,12 +14,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.template.defaulttags import url
 from django.urls import path, include
+
+from file.views import generate_qrcode
 
 urlpatterns = [
     path('api/user/', include(('user.urls', 'user'))),
     path('api/file/', include(('file.urls', 'file'))),
     path('api/team/', include(('team.urls', 'team'))),
     path('api/message/', include(('message.urls', 'message'))),
-    path('api/favourite/', include(('favourite.urls', 'favourite')))
+    path('api/favourite/', include(('favourite.urls', 'favourite'))),
+
 ]
