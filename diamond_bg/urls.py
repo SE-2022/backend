@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.template.defaulttags import url
 from django.urls import path, include
 
-from file.views import generate_qrcode
+# from file.views import generate_qrcode
 
 urlpatterns = [
     path('api/user/', include(('user.urls', 'user'))),

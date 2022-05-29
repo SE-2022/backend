@@ -11,7 +11,7 @@ from file.models import File, Comment
 from team.models import Team, Team_User
 from user.models import User
 from user.views import login_check, res
-import qrcode
+# import qrcode
 from file.lock import *
 
 
