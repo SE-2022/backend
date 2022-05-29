@@ -35,15 +35,25 @@ def check_lack(obj_dic):
     return False, None
 
 
-# 从用户名获取用户对象
-def get_user(username):
-    username = str(username)
+# 从用户名或邮箱获取用户对象
+def get_user(username_or_email):
+    username_or_email = str(username_or_email)
+    user = None
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username_or_email)
     except ObjectDoesNotExist:
-        return False, res(3005, "不存在 "+username+" 这个用户")
+        pass
+        # return False, res(3005, "不存在 "+username+" 这个用户")
     except MultipleObjectsReturned:
-        return False, res(1, "有多个用户具有名称 "+username+" ，这是一个bug")
+        return False, res(1, "有多个用户具有名称 "+username_or_email+" ，这是一个bug")
+    if user is not None:
+        return True, user
+    try:
+        user = User.objects.get(email=username_or_email)
+    except ObjectDoesNotExist:
+        return False, res(3005, username_or_email+" 不是任何用户的用户名或邮箱")
+    except MultipleObjectsReturned:
+        return False, res(1, "有多个用户具有邮箱 "+username_or_email+" ，这是一个bug")
     return True, user
 
 
