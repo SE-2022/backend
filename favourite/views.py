@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -110,3 +111,21 @@ def rename_tag(request):
     tag.tag_name = new_tag_name
     tag.save()
     return JsonResponse({'errno': 0, 'msg': "修改成功", 'tagID': tag.tagID})
+
+
+@csrf_exempt
+def show_tags(request):
+    if not request.method == 'POST':
+        return JsonResponse({'errno': 3010, 'msg': "请求方式错误"})
+    if not login_check(request):
+        return JsonResponse({'errno': 3009, 'msg': "用户未登录"})
+    user = User.objects.get(userID=request.session['userID'])
+    try:
+        tag_list = Tag.objects.filter(user=user)
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3006, 'msg': "标签集为空"})
+    res = []
+    for i in tag_list:
+        res.append({'tagID': i.tagID, 'tag_name': i.tag_name})
+    return JsonResponse({'errno': 0, 'tag_list': res})
+
