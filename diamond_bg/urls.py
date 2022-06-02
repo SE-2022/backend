@@ -17,7 +17,6 @@ from django.contrib import admin
 from django.template.defaulttags import url
 from django.urls import path, include
 
-
 urlpatterns = [
     path('api/user/', include(('user.urls', 'user'))),
     path('api/file/', include(('file.urls', 'file'))),

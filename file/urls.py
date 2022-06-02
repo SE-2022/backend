@@ -10,6 +10,7 @@ urlpatterns = [
     path('newteamfile', create_team_file),
     path('deletefile', delete_file),
     path('person_root_filelist', person_root_filelist),
+    path('team_root_filelist', team_root_filelist),
     path('readfile', read_file),
     path('editfile', edit_file),
     path('closefile', close_file),

@@ -5,13 +5,13 @@ from django import forms
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from six import BytesIO
+# from six import BytesIO
 
 from file.models import File, Comment
 from team.models import Team, Team_User
 from user.models import User
 from user.views import login_check, res
-import qrcode
+# import qrcode
 from file.lock import *
 
 
@@ -181,6 +181,9 @@ def create_team_file(request):
             return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
     else:
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+
+
+
 
 
 # 管理员修改团队文件权限
@@ -434,6 +437,32 @@ def person_root_filelist(request):
     #     result.append(file.to_dic())
     return JsonResponse({'errno': 0, 'msg': '成功获取个人根文件列表', 'root_id': user.root_file.fileID,
                          'filelist': acquire_filelist(user, user.root_file.fileID, False)})
+
+
+@csrf_exempt
+def team_root_filelist(request):
+    if request.method != 'POST':
+        return res(1, '请求方式错误')
+    if not login_check(request):
+        return res(1006, '用户未登录')
+    # user = User.objects.get(userID=request.session['userID'])
+    team_name = request.POST['team_name']
+    try:
+        team = Team.objects.get(team_name=team_name)
+    except:
+        return res(1, "提供的团队名有问题")
+    fileList = File.objects.filter(fatherID=team.team_root_file_id)
+    result = []
+    for file in fileList:
+        result.append(file.file_name)
+    return JsonResponse({
+        'errno': 0,
+        'msg': '成功获取团队根文件列表',
+        'root_id': team.team_root_file_id,
+        'filelist': result,
+    })
+
+
 
 
 @csrf_exempt
