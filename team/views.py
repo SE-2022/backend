@@ -223,3 +223,23 @@ def debug_clear_team(request):
     return res(10086, '团队已清空')
 
 
+@csrf_exempt
+def is_manager(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    vals = post_getAll(request, 'team_name')
+    userID = request.session['userID']
+    try:
+        team = Team.objects.get(team_name=vals['team_name']);
+    except:
+        return res(1, "没找到这个团队")
+    return JsonResponse({
+        'errno': 0,
+        'msg': "成功获取成员身份",
+        'isManager': team.manager.userID == userID,
+    })
+
+
