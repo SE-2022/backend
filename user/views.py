@@ -130,7 +130,7 @@ def logout(request):
 @csrf_exempt
 def get_user_info(request):
     if request.method != 'POST':
-        return res(1, '请求方式错误')
+        return res(2, '请求方式错误')
     if not login_check(request):
         return need_login()
     user = User.objects.get(userID=request.session['userID'])
@@ -162,7 +162,7 @@ def edit_user_info(request):
         return res(1007, '个人信息填写有误')
     # 用户名不得与现有的重复
     if username_exist(user.username):
-        return res(1010, "用户名已被注册")
+        return res(1010, "用户名"+user.username+"已被注册")
     user.password = make_password(user.password)
     user.save()
     return res(0, '编辑个人信息成功')
