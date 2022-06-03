@@ -30,6 +30,21 @@ def acquire_filelist(user, father_id, allow_del):
     return result
 
 
+def acquire_teamfilelist(team, father_id, allow_del):
+    file_list = File.objects.filter(team=team, fatherID=father_id)
+    result = []
+    for i in file_list:
+        if not (i.isDelete and not allow_del):
+            result.append({"fileID": i.fileID,
+                           "fileName": i.file_name,
+                           "creator": i.username,
+                           "createTime": i.create_time,
+                           "lastEditTime": i.last_modify_time,
+                           "isDir": i.isDir,
+                           "fatherID": i.fatherID})
+    return result
+
+
 @csrf_exempt
 def delete_filelist(user):
     file_list = File.objects.filter(user=user, isDelete=True, fatherID=user.root_file.fileID)
@@ -459,7 +474,7 @@ def team_root_filelist(request):
         'errno': 0,
         'msg': '成功获取团队根文件列表',
         'root_id': team.team_root_file_id,
-        'filelist': result,
+        'filelist': acquire_teamfilelist(team, team.team_root_file_id, False),
     })
 
 
