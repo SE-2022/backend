@@ -7,5 +7,6 @@ urlpatterns = [
     path('getTagMsg', get_tag_msg),
     path('removeTag', remove_tag),
     path('renameTag', rename_tag),
-    path('showTags', show_tags)
+    path('showTags', show_tags),
+    path('removeTagFile', remove_tag_file)
 ]
