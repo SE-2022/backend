@@ -37,7 +37,7 @@ def acquire_teamfilelist(team, father_id, allow_del):
         if not (i.isDelete and not allow_del):
             result.append({"fileID": i.fileID,
                            "fileName": i.file_name,
-                           "creator": i.username,
+                           "author": i.username,
                            "createTime": i.create_time,
                            "lastEditTime": i.last_modify_time,
                            "isDir": i.isDir,
