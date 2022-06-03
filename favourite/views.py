@@ -18,7 +18,7 @@ def create_tag(request):
     if not login_check(request):
         return JsonResponse({'errno': 3009, 'msg': "用户未登录"})
     try:
-        tag_name = request.method.get('tag_name')
+        tag_name = request.POST.get('tag_name')
     except ValueError:
         return JsonResponse({'errno': 3001, 'msg': "标签名不得为空"})
     except Exception as e:
@@ -39,16 +39,20 @@ def add_tag_to_file(request):
     if not login_check(request):
         return JsonResponse({'errno': 3009, 'msg': "用户未登录"})
     try:
-        fileid = request.method.get('fileid')
-        tag_id = request.method.get('tag_id')
+        fileid = request.POST.get('fileid')
+        tag_id = request.POST.get('tag_id')
     except ValueError:
         return JsonResponse({'errno': 3003, 'msg': "信息获取失败"})
     user = User.objects.get(userID=request.session['userID'])
-    relation_tmp = TagFile.objects.filter(file=File.objects.get(fileid=fileid), tag=Tag.objects.get(tagID=tag_id),
+    try:
+        file = File.objects.get(fileID=fileid, isDelete=False, isDir=False)
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3003, 'msg': "信息获取失败"})
+    relation_tmp = TagFile.objects.filter(file=file, tag=Tag.objects.get(tagID=tag_id),
                                           user=user)
     if relation_tmp.count() >= 1:
         return JsonResponse({'errno': 3004, 'msg': "文件已在此标签下"})
-    rel = TagFile(file=File.objects.get(fileid=fileid), tag=Tag.objects.get(tagID=tag_id), user=user)
+    rel = TagFile(file=file, tag=Tag.objects.get(tagID=tag_id), user=user)
     rel.save()
     return JsonResponse({'errno': 0, 'msg': "收藏成功"})
 
@@ -60,11 +64,14 @@ def get_tag_msg(request):
     if not login_check(request):
         return JsonResponse({'errno': 3009, 'msg': "用户未登录"})
     try:
-        tag_id = request.method.get('tag_id')
+        tag_id = request.POST.get('tag_id')
     except ValueError:
         return JsonResponse({'errno': 3003, 'msg': "信息获取失败"})
     user = User.objects.get(userID=request.session['userID'])
-    tag = Tag.objects.get(tagID=tag_id, user=user)
+    try:
+        tag = Tag.objects.get(tagID=tag_id, user=user)
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3003, 'msg': "信息获取失败"})
     res_list = []
     tag_list = TagFile.objects.filter(user=user, tag=tag)
     for i in tag_list:
@@ -78,7 +85,7 @@ def remove_tag(request):
     if request.method == 'POST':
         if login_check(request):
             try:
-                tag_id = request.method.get('tag_id')
+                tag_id = request.POST.get('tag_id')
             except ValueError:
                 return JsonResponse({'errno': 3003, 'msg': "标签信息获取失败"})
             user = User.objects.get(userID=request.session['userID'])
@@ -91,26 +98,27 @@ def remove_tag(request):
         return JsonResponse({'errno': 3010, 'msg': "请求方式错误"})
 
 
+@csrf_exempt
 def rename_tag(request):
     if not request.method == 'POST':
         return JsonResponse({'errno': 3010, 'msg': "请求方式错误"})
     if not login_check(request):
         return JsonResponse({'errno': 3009, 'msg': "用户未登录"})
     try:
-        tag_id = request.method.get('tag_id')
-        new_tag_name = request.method.get('new_tag_name')
+        tag_id = request.POST.get('tag_id')
+        new_tag_name = request.POST.get('new_tag_name')
     except ValueError:
         return JsonResponse({'errno': 3003, 'msg': "信息获取失败"})
     user = User.objects.get(userID=request.session['userID'])
     try:
         tag = Tag.objects.get(tagID=tag_id, user=user)
-        if tag.DoesNotExist:
-            raise ValueError("无法获取标签信息")
-    except ValueError as e:
-        return JsonResponse({'errno': 3005, 'msg': repr(e)})
+        # if tag.DoesNotExist:
+        #     raise ValueError("无法获取标签信息")
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3005, 'msg': "无法获取标签信息"})
     tag.tag_name = new_tag_name
     tag.save()
-    return JsonResponse({'errno': 0, 'msg': "修改成功", 'tagID': tag.tagID})
+    return JsonResponse({'errno': 0, 'msg': "修改成功", 'tagID': tag.tagID, 'tag_name': tag.tag_name})
 
 
 @csrf_exempt
@@ -129,3 +137,31 @@ def show_tags(request):
         res.append({'tagID': i.tagID, 'tag_name': i.tag_name})
     return JsonResponse({'errno': 0, 'tag_list': res})
 
+
+@csrf_exempt
+def remove_tag_file(request):
+    if not request.method == 'POST':
+        return JsonResponse({'errno': 3010, 'msg': "请求方式错误"})
+    if not login_check(request):
+        return JsonResponse({'errno': 3009, 'msg': "用户未登录"})
+    try:
+        tag_id = request.POST.get('tag_id')
+        fileid = request.POST.get('fileid')
+    except ValueError:
+        return JsonResponse({'errno': 3003, 'msg': "信息获取失败"})
+
+    try:
+        file = File.objects.get(fileID=fileid)
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3007, 'msg': "文件信息获取失败"})
+    try:
+        tag = Tag.objects.get(tagID=tag_id)
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3008, 'msg': "标签信息获取失败"})
+    user = User.objects.get(userID=request.session['userID'])
+    try:
+        file_tag_relation = TagFile.objects.get(file=file, tag=tag, user=user)
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3011, 'msg': "文件不在此标签下"})
+    file_tag_relation.delete()
+    return JsonResponse({'errno': 0, 'msg': "取消收藏成功"})
