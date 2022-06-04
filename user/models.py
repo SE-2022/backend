@@ -10,6 +10,9 @@ class User(models.Model):
     password = models.CharField(max_length=20)
     avatar = models.ImageField(upload_to='avatar')
     email = models.CharField(max_length=50)
+    phone = models.CharField(max_length=20, default='')
+    information = models.TextField(default='')
+    register_time = models.DateTimeField(auto_now_add=True)
     root_file = models.ForeignKey(
         'file.File',
         on_delete=models.CASCADE,
