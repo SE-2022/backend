@@ -166,8 +166,7 @@ def edit_user_info(request):
         return need_login()
     # 获取信息
     vals = post_getAll(request, 'username',
-                       'email', 'phone', 'information',
-                       'old_password', 'new_password')
+                       'email', 'phone', 'information')
     lack, lack_list = check_lack(vals)
     message = ""
     user = User.objects.get(userID=request.session['userID'])
@@ -179,15 +178,6 @@ def edit_user_info(request):
     user.email = vals['email']
     user.phone = vals['phone']
     user.information = vals['information']
-    # 如果两个password字段不为空，尝试修改
-    if len(vals['old_password'])!=0 or len(vals['new_password'])!=0:
-        if check_password(vals['old_password'], user.password):
-            if password_check(vals['new_password']):
-                user.password = make_password(vals['new_password'])
-            else:
-                message += "新密码过短\n"
-        else:
-            message += "旧密码错误\n"
     # 完成所有修改，保存
     message += "其余修改成功\n"
     user.save()
@@ -195,6 +185,26 @@ def edit_user_info(request):
         'errno': 0,
         'msg': message,
     })
+
+@csrf_exempt
+def edit_password(request):
+    if request.method != 'POST':
+        return res(1, '请求方式错误')
+    if not login_check(request):
+        return need_login()
+    vals = post_getAll(request, "old_password", "new_password")
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    user = User.objects.get(userID=request.session['userID'])
+    if check_password(vals['old_password'], user.password):
+        if password_check(vals['new_password']):
+            user.password = make_password(vals['new_password'])
+            user.save()
+            return res(0, "修改密码成功")
+        else:
+            return res(1005, "新密码太弱")
+    return res(1003, "旧密码错误")
 
 
 @csrf_exempt
