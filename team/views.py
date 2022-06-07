@@ -196,7 +196,10 @@ def team_info(request):
     if not found:
         return res(3002, '用户 '+user.username+' 不在团队 '+team.team_name+' 中，'+
                    '没有获取信息的权限')
-    username_list = list(map(lambda x: x.user.username, tu_list))
+    username_list = list(map(lambda x: {
+        'username': x.user.username,
+        'email': x.user.email,
+    }, tu_list))
     return JsonResponse({'errno': 0,
                          'msg': '获取团队信息成功',
                          'team_info': {

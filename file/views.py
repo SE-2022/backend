@@ -305,7 +305,7 @@ def edit_file(request):
     elif file.isDir:
         return JsonResponse({'errno': 2013, 'msg': "无法编辑文件夹内容"})
     # ------------互斥访问-------------
-    elif (file.using is not None) and (file.using.userID == user.userID):
+    elif (file.using is not None) and (file.using.userID != user.userID):
         return res(2103, '此文件正在被用户 ' + file.using.username + ' 使用，无法编辑')
     else:
         file.content = file_content
