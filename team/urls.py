@@ -8,6 +8,7 @@ urlpatterns = [
     path('apply_for_joining_team', apply_for_joining_team),
     path('team_info', team_info),
     path('invite', invite),
+    path('kick', kick),
     path('is_manager', is_manager),
     path('manager_transfer', manager_transfer),
     path('destroy', destroy),

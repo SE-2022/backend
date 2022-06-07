@@ -176,6 +176,45 @@ def invite(request):
     return res(0, "用户 %s 已加入团队 %s" % (vals['username_or_email'], vals['team_name']))
 
 
+@csrf_exempt
+def kick(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    # 获取信息，并检查是否缺项
+    vals = post_getAll(request, 'team_name', 'username_or_email')
+    vals['userID'] = request.session['userID']
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    # 获取用户对象
+    found, user = get_user(vals['username_or_email'])
+    if not found:
+        return user
+    # 获取团队对象
+    try:
+        team = Team.objects.get(team_name=vals['team_name'])
+    except ObjectDoesNotExist:
+        return res(3006, "不存在 "+vals['team_name']+" 这个团队")
+    except MultipleObjectsReturned:
+        return res(1, "有多个团队具有名称 "+vals['team_name']+" ，这是一个bug")
+    # 获取本用户
+    me = User.objects.get(userID=vals['userID'])
+    # 被踢出的用户必须已经在这个团队中
+    team_user = Team_User.objects.filter(team=team, user=user)
+    if len(team_user) == 0:
+        return res(3003, "用户 "+vals['username_or_email']+" 不在团队 "+vals['team_name']+" 中")
+    # 发起踢出的用户必须是此团队的管理员
+    if team.manager.userID != me.userID:
+        return res(3004, "目前登录的用户 %s 不是团队 %s 的管理员，只有管理员能移除成员"
+                   % (me.username, vals['team_name']))
+    for tu in team_user:
+        tu.delete()
+    return res(0, "成员"+user.username+"已被移除")
+
+
 # 获取团队信息
 @csrf_exempt
 def team_info(request):
