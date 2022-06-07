@@ -3,11 +3,15 @@ from django.core.exceptions import *
 from django.http import HttpResponse
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
-
+from django.utils import timezone
 from file.models import File
 # from django.contrib.auth.models import User
 from user.models import User
 from utility.utility import *
+
+from datetime import datetime
+
+from team.models import Team_User
 
 
 def send_email(target, content):
@@ -130,15 +134,27 @@ def logout(request):
 @csrf_exempt
 def get_user_info(request):
     if request.method != 'POST':
-        return res(2, '请求方式错误')
+        return res(1, '请求方式错误')
     if not login_check(request):
         return need_login()
     user = User.objects.get(userID=request.session['userID'])
+    team_cnt = len(Team_User.objects.filter(user=user))
+    file_cnt = len(File.objects.filter(user=user))
+    diff = timezone.now() - user.register_time
+    dates = diff.days
+    seconds = diff.seconds
+
     return JsonResponse({'errno': 0, 'msg': '获取个人信息成功',
                          'user_info': {
                              'userID': user.userID,
                              'username': user.username,
                              'email': user.email,
+                             'phone': user.phone,
+                             'information': user.information,
+                             'team_count': team_cnt,
+                             'file_count': file_cnt,
+                             'date_count': dates,
+                             'seconds_count': seconds,
                          }})
 
 
@@ -149,23 +165,46 @@ def edit_user_info(request):
     if not login_check(request):
         return need_login()
     # 获取信息
-    vals = post_getAll(request, 'username', 'password', 'email')
+    vals = post_getAll(request, 'username',
+                       'email', 'phone', 'information')
+    lack, lack_list = check_lack(vals)
+    message = ""
+    user = User.objects.get(userID=request.session['userID'])
+    # 尝试修改用户名
+    if vals['username']!=user.username and username_exist(vals['username']):
+        message += "用户名"+user.username+"已被注册\n"
+    user.username = vals['username']
+    # 修改email、phone、information，不进行检查
+    user.email = vals['email']
+    user.phone = vals['phone']
+    user.information = vals['information']
+    # 完成所有修改，保存
+    message += "其余修改成功\n"
+    user.save()
+    return JsonResponse({
+        'errno': 0,
+        'msg': message,
+    })
+
+@csrf_exempt
+def edit_password(request):
+    if request.method != 'POST':
+        return res(1, '请求方式错误')
+    if not login_check(request):
+        return need_login()
+    vals = post_getAll(request, "old_password", "new_password")
     lack, lack_list = check_lack(vals)
     if lack:
         return lack_err(lack_list)
     user = User.objects.get(userID=request.session['userID'])
-    user.username = vals['username']
-    user.password = vals['password']
-    user.email = vals['email']
-    # 各字段不能为空
-    if not userinfo_check(user) or not password_check(user.password):
-        return res(1007, '个人信息填写有误')
-    # 用户名不得与现有的重复
-    if username_exist(user.username):
-        return res(1010, "用户名"+user.username+"已被注册")
-    user.password = make_password(user.password)
-    user.save()
-    return res(0, '编辑个人信息成功')
+    if check_password(vals['old_password'], user.password):
+        if password_check(vals['new_password']):
+            user.password = make_password(vals['new_password'])
+            user.save()
+            return res(0, "修改密码成功")
+        else:
+            return res(1005, "新密码太弱")
+    return res(1003, "旧密码错误")
 
 
 @csrf_exempt

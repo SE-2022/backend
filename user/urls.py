@@ -8,6 +8,7 @@ urlpatterns = [
     path('logout', logout),
     path('get_user_info', get_user_info),
     path('edit_user_info', edit_user_info),
+    path('edit_password', edit_password),
     path('get_user_avatar', get_user_avatar),
     path('edit_user_avatar', edit_user_avatar),
     path('get_status', get_status),

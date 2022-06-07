@@ -77,6 +77,7 @@
 |-------|----|
 | 0     | 成功 |
 |2、3、4|见../Readme.md|
+|3001| 团队名不存在 |
 |3002|用户不在这个团队中，无权查看信息|
 
 正确结果栗子：
@@ -85,10 +86,21 @@
     "errno": 0,
     "msg": "获取团队信息成功",
     "team_info": {
-        "manager": "lyh",
+        "manager_list": [
+            {
+                "username": "xyzttt",
+                "email": "kjsdhfkjhd"
+            }
+        ],
         "user_list": [
-            "lyh",
-            "xyz"
+            {
+                "username": "xyzttt",
+                "email": "kjsdhfkjhd"
+            },
+            {
+                "username": "lyh",
+                "email": "lyh.net"
+            }
         ]
     }
 }

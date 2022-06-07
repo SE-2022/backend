@@ -305,7 +305,7 @@ def edit_file(request):
     elif file.isDir:
         return JsonResponse({'errno': 2013, 'msg': "无法编辑文件夹内容"})
     # ------------互斥访问-------------
-    elif (file.using is not None) and (file.using.userID == user.userID):
+    elif (file.using is not None) and (file.using.userID != user.userID):
         return res(2103, '此文件正在被用户 ' + file.using.username + ' 使用，无法编辑')
     else:
         file.content = file_content
@@ -478,7 +478,7 @@ def team_root_filelist(request):
     })
 
 
-
+# 如果请求中包含team_name字段，则是团队文件
 
 @csrf_exempt
 def get_file_list_of_dir(request):
@@ -495,18 +495,29 @@ def get_file_list_of_dir(request):
             return JsonResponse({'errno': 2015, 'msg': "父文件夹信息获取失败"})
         except Exception as e:
             return JsonResponse({'errno': 2000, 'msg': repr(e)})
+        team = None
+        if 'team_name' in request.POST:
+            team = Team.objects.get(team_name=request.POST['team_name'])
         user = User.objects.get(userID=request.session['userID'])
-        father_dir = File.objects.get(fileID=father_id, user=user)
+        if team is None:
+            father_dir = File.objects.get(fileID=father_id, user=user)
         # if father_dir.isDelete:
         #     return JsonResponse({'errno': 2016, 'msg': "文件夹已被删除"})
-        if not father_dir.isDir:
-            return JsonResponse({'errno': 2017, 'msg': "无法查看非文件夹内容"})
-        else:
-            if father_dir.isDelete:
-                result = {'errno': 0, 'msg': "打开文件夹成功", 'dir_filelist': acquire_filelist(user, father_id, True)}
+
+        if team is None:
+            if not father_dir.isDir:
+                return JsonResponse({'errno': 2017, 'msg': "无法查看非文件夹内容"})
             else:
-                result = {'errno': 0, 'msg': "打开文件夹成功", 'dir_filelist': acquire_filelist(user, father_id, False)}
-            return JsonResponse(result)
+                if father_dir.isDelete:
+                    result = {'errno': 0, 'msg': "打开文件夹成功", 'dir_filelist': acquire_filelist(user, father_id, True)}
+                else:
+                    result = {'errno': 0, 'msg': "打开文件夹成功", 'dir_filelist': acquire_filelist(user, father_id, False)}
+                return JsonResponse(result)
+        return JsonResponse({
+            'errno': 0,
+            'msg': '打开团队文件成功',
+            'dir_filelist': acquire_teamfilelist(team, father_id, False)
+        })
 
     else:
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
