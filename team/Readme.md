@@ -86,7 +86,12 @@
     "errno": 0,
     "msg": "获取团队信息成功",
     "team_info": {
-        "manager": "xyzttt",
+        "manager_list": [
+            {
+                "username": "xyzttt",
+                "email": "kjsdhfkjhd"
+            }
+        ],
         "user_list": [
             {
                 "username": "xyzttt",

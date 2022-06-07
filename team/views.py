@@ -200,11 +200,14 @@ def team_info(request):
         'username': x.user.username,
         'email': x.user.email,
     }, tu_list))
+    manager_list = [{
+        'username': team.manager.username,
+        'email': team.manager.email,
+    }]
     return JsonResponse({'errno': 0,
                          'msg': '获取团队信息成功',
                          'team_info': {
-                             'manager': team.manager.username,
-                             'manager_email': team.manager.email,
+                             'manager_list': manager_list,
                              'user_list': username_list,
                          }})
 
