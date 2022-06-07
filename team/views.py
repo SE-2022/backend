@@ -204,6 +204,7 @@ def team_info(request):
                          'msg': '获取团队信息成功',
                          'team_info': {
                              'manager': team.manager.username,
+                             'manager_email': team.manager.email,
                              'user_list': username_list,
                          }})
 
