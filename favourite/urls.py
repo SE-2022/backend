@@ -8,5 +8,8 @@ urlpatterns = [
     path('removeTag', remove_tag),
     path('renameTag', rename_tag),
     path('showTags', show_tags),
-    path('removeTagFile', remove_tag_file)
+    path('removeTagFile', remove_tag_file),
+    path('changeColor', change_color),
+    path('changeDetails', change_details),
+    path('showfav', show_all_fav_file)
 ]
