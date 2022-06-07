@@ -24,6 +24,17 @@ def name2team(team_name):
     return True, team
 
 
+def name2user(username):
+    try:
+        user = User.objects.get(username=username)
+    except ObjectDoesNotExist:
+        return False, res(1, '用户名 '+username+' 不存在')
+    except MultipleObjectsReturned:
+        return False, res(1, '用户名 ' + username + ' 被多个用户拥有，' +
+                   '不应该出现此情况，请联系lyh')
+    return True, user
+
+
 @csrf_exempt
 def create_team(request):
     # 一般检查
@@ -250,3 +261,56 @@ def is_manager(request):
     })
 
 
+# 移交管理权限
+@csrf_exempt
+def manager_transfer(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    vals = post_getAll(request, 'username', 'team_name')
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    userID = request.session['userID']
+    success, team = name2team(vals['team_name'])
+    if not success:
+        return team
+    success, new_manager = name2user(vals['username'])
+    if not success:
+        return new_manager
+    user = User.objects.get(userID=userID)
+    if team.manager.userID != user.userID:
+        return res(1, '您不是此团队的管理员，不能移交管理权')
+    found = Team_User.objects.filter(team=team, user=new_manager)
+    if len(found) == 0:
+        return res(1, '用户'+new_manager+'不是团队'+team.team_name+'的成员')
+    # 通过检查，实施修改
+    team.manager = new_manager
+    team.save()
+    return res(0, '成功将团队'+team.team_name+'的管理员设为用户'+new_manager.username)
+
+
+@csrf_exempt
+def destroy(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    vals = post_getAll(request, 'team_name')
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    userID = request.session['userID']
+    success, team = name2team(vals['team_name'])
+    if not success:
+        return team
+    user = User.objects.get(userID=userID)
+    if team.manager.userID != user.userID:
+        return res(1, '您不是此团队的管理员，不能销毁此团队')
+    # 通过检查，实施修改
+    name = team.team_name
+    team.delete()
+    return res(0, '团队'+name+'已被销毁')

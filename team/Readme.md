@@ -166,6 +166,53 @@
 }
 ```
 
+# 移交团队管理权限
+
+`/api/team/manager_transfer`
+
+### 需要参数
+
+- team_name：要移交哪个团队的权限
+- username：要移交权限给哪个用户
+
+### 返回结果
+
+errno非0即为发生错误，错误可能包括：
+- 团队名不存在
+- 用户名不存在
+- 本用户并非此团队管理员
+- 待移交用户并非此团队的成员
+
+正确结果：
+```json
+{
+    "errno": 0,
+    "msg": "成功将团队 love and peace 的管理权移交给用户 xyz"
+}
+```
+
+# 销毁团队
+
+`/api/team/destroy`
+
+### 需要参数
+
+- team_name：要销毁的团队
+
+### 返回结果
+
+errno非0即为发生错误，错误可能包括：
+- 团队名不存在
+- 本用户并非此团队管理员
+
+正确结果：
+```json
+{
+    "errno": 0,
+    "msg": "团队 love and peace 已被销毁"
+}
+```
+
 # debug 查看全部团队
 
 `/api/team/debug_all_team`
