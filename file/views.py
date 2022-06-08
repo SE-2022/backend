@@ -1,22 +1,14 @@
+from django.contrib.auth.hashers import make_password
 from django.utils import timezone
-
-from django.forms import forms
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
-from django import forms
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+
 # from six import BytesIO
 from favourite.models import TagFile
-from file.models import File, Comment
-from team.models import Team, Team_User
-from user.models import User
-from user.views import login_check, res
 # import qrcode
 from file.lock import *
-
-
+from file.models import File, Comment, File_share_link
+from team.models import Team, Team_User
 # from file.models import Directory
 from utility.utility import *
 
@@ -28,9 +20,14 @@ def acquire_filelist(user, father_id, allow_del):
     result = []
     for i in file_list:
         if not (i.isDelete and not allow_del):
-            result.append({"fileID": i.fileID, "fileName": i.file_name, "createTime": i.create_time,
+            result.append({"fileID": i.fileID,
+                           "fileName": i.file_name,
+                           "author": i.user.username,
+                           "createTime": i.create_time,
                            "lastEditTime": i.last_modify_time,
-                           "isDir": i.isDir, "fatherID": i.fatherID, "is_fav": i.is_fav})
+                           "isDir": i.isDir,
+                           "fatherID": i.fatherID,
+                           "is_fav": i.is_fav})
     return result
 
 
@@ -881,3 +878,50 @@ def debug_file_status(request):
 
     return JsonResponse(result)
 
+
+@csrf_exempt
+def create_share_link(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    # 获取信息，并检查是否缺项
+    vals = post_getAll(request, 'fileID', 'perm')
+    vals['userID'] = request.session['userID']
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    try:
+        file = File.objects.get(fileID=vals['fileID'])
+    except:
+        return res(1, '找不到这个文件')
+    if file.user_id != request.session['userID']:
+        return res(1, '这不是你的文件，你共享个锤子')
+    if file.isDir:
+        return res(1, '不能共享文件夹')
+    try:
+        perm = int(request.POST['perm'])
+    except:
+        return res(1, "权限必须为0（读写）或1（只读），您提供了" + str(request.POST['perm']))
+    if file.team is not None:
+        return res(1, "此文件是团队文件，不能生成分享链接")
+    if perm != 0 and perm != 1:
+        return res(2107, "权限必须为0（读写）或1（只读），您提供了" + str(perm))
+    # 通过检查，
+    link = "http://123.57.69.30/api/link/"+make_password(file.file_name)[-20:-1]
+    File_share_link.objects.create(
+        file=file,
+        perm=perm,
+        link=link,
+    )
+    return JsonResponse({
+        'errno': 0,
+        'res': "成功生成分享链接",
+        'link': link,
+    })
+
+
+@csrf_exempt
+def read_file_by_share_link(request):
+    pass
