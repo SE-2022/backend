@@ -12,6 +12,7 @@ urlpatterns = [
     path('is_manager', is_manager),
     path('manager_transfer', manager_transfer),
     path('destroy', destroy),
+    path('rename', rename),
     path('debug_all_team', debug_all_team),
     path('debug_clear_team', debug_clear_team),
 ]

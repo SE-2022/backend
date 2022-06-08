@@ -290,7 +290,7 @@ def is_manager(request):
     vals = post_getAll(request, 'team_name')
     userID = request.session['userID']
     try:
-        team = Team.objects.get(team_name=vals['team_name']);
+        team = Team.objects.get(team_name=vals['team_name'])
     except:
         return res(1, "没找到这个团队")
     return JsonResponse({
@@ -353,3 +353,30 @@ def destroy(request):
     name = team.team_name
     team.delete()
     return res(0, '团队'+name+'已被销毁')
+
+
+@csrf_exempt
+def rename(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    vals = post_getAll(request, 'team_name', 'new_team_name')
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    userID = request.session['userID']
+    # user = User.objects.get(userID=userID)
+    success, team = name2team(vals['team_name'])
+    if not success:
+        return team
+    if team.manager.userID != userID:
+        return res(1, '你不是这个团队的管理员，不能修改团队名')
+    team_list = Team.objects.filter(team_name=vals['new_team_name'])
+    if len(team_list)>0:
+        return res(1, '团队名'+vals['new_team_name']+'已被其它团队使用')
+    team.team_name = vals['new_team_name']
+    team.save()
+    return res(0, '团队已改名为'+vals['new_team_name'])
+

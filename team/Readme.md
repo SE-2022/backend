@@ -246,3 +246,30 @@ errno非0即为发生错误，错误可能包括：
 # debug 删除全部团队
 
 `/api/team/debug_clear_team`
+
+
+# 团队改名
+
+`/api/team/rename`
+
+### 需要参数
+
+- team_name：当前团队名
+- new_team_name：新的团队名
+
+### 返回结果
+
+可能的错误：
+- 当前团队名错误
+- 你不是这个团队的管理员
+- 新的团队名和其它团队重复了
+
+正确结果：
+```json
+{
+    "errno": 0,
+    "msg": "团队已改名为love and peace"
+}
+```
+
+
