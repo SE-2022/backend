@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from django.forms import forms
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
@@ -16,6 +18,7 @@ from file.lock import *
 
 
 # from file.models import Directory
+from utility.utility import *
 
 
 @csrf_exempt
@@ -248,6 +251,10 @@ def read_file(request):
         username = file.using.username
     # ------------互斥访问结束-------------
 
+    # 更新访问时间
+    file.last_read_time = timezone.now()
+    file.save()
+
     result = {'errno': 0,
               'fileName': file.file_name,
               'create_time': file.create_time,
@@ -322,6 +329,41 @@ def close_file(request):
         return res(0, '成功解除对文件 ' + file.file_name + ' 的锁定')
     return res(1, '没能解锁此文件（可能由于此用户并没有持有锁')
 
+
+#
+@csrf_exempt
+def last_10_read_file(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    user = User.objects.get(userID=request.session['userID'])
+    file_list = list(File.objects.filter(user=user))
+    file_list.sort(key=lambda x:x.last_read_time)
+    file_list = reversed(file_list)
+    cnt = 0
+    result = []
+    for i in file_list:
+        if cnt == 10:
+            break
+        if not i.isDelete and not i.isDir:
+            cnt += 1
+            result.append({
+                "fileID": i.fileID,
+                "fileName": i.file_name,
+                "createTime": i.create_time,
+                "lastEditTime": i.last_modify_time,
+                "lastReadTime": i.last_read_time,
+                "isDir": i.isDir,
+                "fatherID": i.fatherID,
+                "is_fav": i.is_fav
+            })
+    return JsonResponse({
+        'errno': 0,
+        'msg': '成功获取'+str(len(result))+'个最近访问的文件',
+        'file_list': result,
+    })
 
 @csrf_exempt
 def change_file_name(request):

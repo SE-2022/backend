@@ -26,4 +26,5 @@ urlpatterns = [
     path('showcomment', show_comment_list),
     # url('^qrcode/(.+)$', generate_qrcode),
     path('debug_file_status', debug_file_status),
+    path('last_10_read_file', last_10_read_file),
 ]

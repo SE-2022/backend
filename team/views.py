@@ -247,10 +247,17 @@ def team_info(request):
     if not found:
         return res(3002, '用户 '+user.username+' 不在团队 '+team.team_name+' 中，'+
                    '没有获取信息的权限')
-    username_list = list(map(lambda x: {
-        'username': x.user.username,
-        'email': x.user.email,
-    }, tu_list))
+    # username_list = list(map(lambda x: {
+    #     'username': x.user.username,
+    #     'email': x.user.email,
+    # }, tu_list))
+    user_list = []
+    for tu in tu_list:
+        if tu.user.userID != team.manager_id:
+            user_list.append({
+                'username': tu.user.username,
+                'email': tu.user.email,
+            })
     manager_list = [{
         'username': team.manager.username,
         'email': team.manager.email,
@@ -259,7 +266,7 @@ def team_info(request):
                          'msg': '获取团队信息成功',
                          'team_info': {
                              'manager_list': manager_list,
-                             'user_list': username_list,
+                             'user_list': user_list,
                          }})
 
 
