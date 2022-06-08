@@ -95,8 +95,11 @@ def add_tag_to_file(request):
     try:
         file = File.objects.get(fileID=fileid, isDelete=False, isDir=False)
     except ObjectDoesNotExist:
-        return JsonResponse({'errno': 3003, 'msg': "信息获取失败"})
-    tag = Tag.objects.get(user=user, tagID=tag_id)
+        return JsonResponse({'errno': 3003, 'msg': "文件信息获取失败"})
+    try:
+        tag = Tag.objects.get(user=user, tagID=tag_id)
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3003, 'msg': "标签不存在"})
 
     relation_tmp = TagFile.objects.filter(file=file, tag=tag,
                                           user=user)
@@ -129,7 +132,7 @@ def get_tag_msg(request):
     tag_list = TagFile.objects.filter(user=user, tag=tag)
     for i in tag_list:
         res_list.append(
-            {"fileName": i.file.file_name, "createTime": i.file.create_time, "lastEditTime": i.last_modify_time,
+            {"fileName": i.file.file_name, "createTime": i.file.create_time, "lastEditTime": i.file.last_modify_time,
              "tag_file_relationID": i.id,
              "author": user.username})
     return JsonResponse({'errno': 0, 'msg': "筛选成功", 'tag_color': tag.tag_color, 'tag_details': tag.tag_details,
