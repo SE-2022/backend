@@ -128,8 +128,10 @@ def get_tag_msg(request):
     res_list = []
     tag_list = TagFile.objects.filter(user=user, tag=tag)
     for i in tag_list:
-        res_list.append({"filename": i.file.file_name, "create_time": i.file.create_time, "tag_file_relationID": i.id,
-                         "author": user.username})
+        res_list.append(
+            {"fileName": i.file.file_name, "createTime": i.file.create_time, "lastEditTime": i.last_modify_time,
+             "tag_file_relationID": i.id,
+             "author": user.username})
     return JsonResponse({'errno': 0, 'msg': "筛选成功", 'tag_color': tag.tag_color, 'tag_details': tag.tag_details,
                          'tag_file_list': res_list})
 
