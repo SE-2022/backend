@@ -6,7 +6,7 @@ from django import forms
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 # from six import BytesIO
-
+from favourite.models import TagFile
 from file.models import File, Comment
 from team.models import Team, Team_User
 from user.models import User
@@ -21,12 +21,13 @@ from file.lock import *
 @csrf_exempt
 def acquire_filelist(user, father_id, allow_del):
     file_list = File.objects.filter(user=user, fatherID=father_id)
+    fav_file_list = TagFile.objects.values_list('file', flat=True).distinct()
     result = []
     for i in file_list:
         if not (i.isDelete and not allow_del):
             result.append({"fileID": i.fileID, "fileName": i.file_name, "createTime": i.create_time,
                            "lastEditTime": i.last_modify_time,
-                           "isDir": i.isDir, "fatherID": i.fatherID})
+                           "isDir": i.isDir, "fatherID": i.fatherID, "is_fav": i.is_fav})
     return result
 
 
@@ -127,7 +128,8 @@ def create_file(request):
                       'commentFul': new_file.commentFul,
                       'isDir': new_file.isDir,
                       'author': new_file.user.username,
-                      'msg': "新建成功"}
+                      'msg': "新建成功",
+                      "is_fav": new_file.is_fav}
             return JsonResponse(result)
 
         else:
@@ -277,6 +279,7 @@ def read_file(request):
 
               'writable': writable,  # 是否可写
               'using': username,  # 使用者的用户名
+              "is_fav": file.is_fav
               }
     return JsonResponse(result)
 
@@ -315,6 +318,7 @@ def edit_file(request):
                   'create_time': file.create_time,
                   'last_modify_time': file.last_modify_time,
                   'author': file.user.username,
+                  "is_fav": file.is_fav,
                   'msg': "保存成功"}
         return JsonResponse(result)
 
@@ -368,6 +372,7 @@ def change_file_name(request):
               'create_time': file.create_time,
               'last_modify_time': file.last_modify_time,
               'author': file.user.username,
+              "is_fav": file.is_fav,
               'msg': "修改成功"
               }
     return JsonResponse(result)
@@ -500,7 +505,10 @@ def get_file_list_of_dir(request):
             team = Team.objects.get(team_name=request.POST['team_name'])
         user = User.objects.get(userID=request.session['userID'])
         if team is None:
-            father_dir = File.objects.get(fileID=father_id, user=user)
+            try:
+                father_dir = File.objects.get(fileID=father_id, user=user)
+            except ObjectDoesNotExist:
+                return JsonResponse({'errno': 2015, 'msg': "父文件夹不存在"})
         # if father_dir.isDelete:
         #     return JsonResponse({'errno': 2016, 'msg': "文件夹已被删除"})
 
