@@ -32,6 +32,8 @@ def create_tag(request):
     tag.save()
     try:
         tag_details = request.POST.get('tag_details')
+        if len(tag_details) == 0:
+            tag_details = '这是标签的简介，你可以修改它'
         tag.tag_details = tag_details
         tag.save()
     except ValueError:
