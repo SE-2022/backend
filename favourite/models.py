@@ -15,7 +15,7 @@ class Tag(models.Model):
         null=True,
     )
     tag_color = models.CharField(max_length=30, default='255')
-    tag_details = models.CharField(max_length=100, null=True, default="这是标签的简介，你可以修改它")
+    tag_details = models.CharField(max_length=100,  default='这是标签的简介，你可以修改它', null=True)
     tag_count = models.IntegerField(default=0)
 
 

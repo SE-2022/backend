@@ -20,6 +20,7 @@ def create_tag(request):
     try:
         tag_name = request.POST.get('tag_name')
         tag_color = request.POST.get('tag_color')
+        tag_details = request.POST.get('tag_details')
     except ValueError:
         return JsonResponse({'errno': 3001, 'msg': "标签不得为空"})
     except Exception as e:
@@ -28,14 +29,27 @@ def create_tag(request):
     tag_cur = Tag.objects.filter(tag_name=tag_name)
     if tag_cur.count() > 0:
         return JsonResponse({'errno': 3002, 'msg': "标签已存在"})
-    tag = Tag(tag_name=tag_name, user=user, tag_color=tag_color)
+    if len(tag_details) == 0:
+        tag_details = "这是标签的简介，你可以修改它"
+    tag = Tag(tag_name=tag_name, user=user, tag_color=tag_color, tag_details=tag_details)
     tag.save()
-    try:
-        tag_details = request.POST.get('tag_details')
-        tag.tag_details = tag_details
-        tag.save()
-    except ValueError:
-        return JsonResponse({'errno': 0, 'msg': "新建标签成功", 'tagID': tag.tagID})
+    # <<<<<<< HEAD
+    #     try:
+    #         tag_details = request.POST.get('tag_details')
+    #         if len(tag_details) == 0:
+    #             tag_details = '这是标签的简介，你可以修改它'
+    #         tag.tag_details = tag_details
+    #         tag.save()
+    #     except ValueError:
+    #         return JsonResponse({'errno': 0, 'msg': "新建标签成功", 'tagID': tag.tagID})
+    # =======
+    #     # try:
+    #     #     tag_details = request.POST.get('tag_details')
+    #     #     tag.tag_details = tag_details
+    #     #     tag.save()
+    #     # except ValueError:
+    #     #     return JsonResponse({'errno': 0, 'msg': "新建标签成功", 'tagID': tag.tagID})
+    # >>>>>>> a17c9a83239aad691bbfad27afb1fb8e25347339
     return JsonResponse({'errno': 0, 'msg': "新建标签成功", 'tagID': tag.tagID, 'tag_count': 0})
 
 
@@ -95,13 +109,19 @@ def add_tag_to_file(request):
     try:
         file = File.objects.get(fileID=fileid, isDelete=False, isDir=False)
     except ObjectDoesNotExist:
-        return JsonResponse({'errno': 3003, 'msg': "信息获取失败"})
-    tag = Tag.objects.get(user=user, tagID=tag_id)
+        return JsonResponse({'errno': 3003, 'msg': "文件信息获取失败"})
+    try:
+        tag = Tag.objects.get(user=user, tagID=tag_id)
+    except ObjectDoesNotExist:
+        return JsonResponse({'errno': 3003, 'msg': "标签不存在"})
 
     relation_tmp = TagFile.objects.filter(file=file, tag=tag,
                                           user=user)
     if relation_tmp.count() >= 1:
         return JsonResponse({'errno': 3004, 'msg': "文件已在此标签下"})
+    if not file.is_fav:
+        file.is_fav = True
+        file.save()
     cnt = tag.tag_count + 1
     tag.tag_count = cnt
     tag.save()
@@ -128,8 +148,10 @@ def get_tag_msg(request):
     res_list = []
     tag_list = TagFile.objects.filter(user=user, tag=tag)
     for i in tag_list:
-        res_list.append({"filename": i.file.file_name, "create_time": i.file.create_time, "tag_file_relationID": i.id,
-                         "author": user.username})
+        res_list.append(
+            {"fileName": i.file.file_name, "createTime": i.file.create_time, "lastEditTime": i.file.last_modify_time,
+             "tag_file_relationID": i.id,
+             "author": user.username})
     return JsonResponse({'errno': 0, 'msg': "筛选成功", 'tag_color': tag.tag_color, 'tag_details': tag.tag_details,
                          'tag_file_list': res_list})
 
@@ -145,6 +167,12 @@ def remove_tag(request):
             user = User.objects.get(userID=request.session['userID'])
             tag = Tag.objects.get(user=user, tagID=tag_id)
             tag.delete()
+            file_tmp = File.objects.filter(isDelete=False, isDir=False, is_fav=True)
+            file_fav_list = TagFile.objects.values_list('file', flat=True).distinct()
+            for i in file_tmp:
+                if i.fileID not in file_fav_list:
+                    i.is_fav = False
+                    i.save()
             return JsonResponse({'errno': 0, 'msg': "删除成功"})
         else:
             return JsonResponse({'errno': 3009, 'msg': "用户未登录"})
@@ -222,6 +250,11 @@ def remove_tag_file(request):
     cnt = tag.tag_count - 1
     tag.tag_count = cnt
     tag.save()
+
+    rel = TagFile.objects.filter(file=file)
+    if rel.count() == 0:
+        file.is_fav = False
+        file.save()
     return JsonResponse({'errno': 0, 'msg': "取消收藏成功"})
 
 
@@ -238,6 +271,10 @@ def show_all_fav_file(request):
     for i in file_list:
         file = File.objects.get(fileID=i)
         if not file.isDelete:
+            # file.is_fav = True
+            # file.save()
             result.append({"fileID": file.fileID, "fileName": file.file_name, "createTime": file.create_time,
                            "lastEditTime": file.last_modify_time})
     return JsonResponse({'errno': 0, 'msg': "查询成功", 'file_list': result})
+
+

@@ -33,6 +33,7 @@ class File(models.Model):
     # 当有人以可写权限打开此文件，其它用户就只能以只读权限打开
     # 只读和可写两种权限的区别，在后端看只是能不能保存修改
     using = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='using')
+    is_fav = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'File'
