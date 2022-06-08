@@ -380,3 +380,27 @@ def rename(request):
     team.save()
     return res(0, '团队已改名为'+vals['new_team_name'])
 
+
+@csrf_exempt
+def leave_team(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    vals = post_getAll(request, 'team_name')
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    success, team = name2team(vals['team_name'])
+    if not success:
+        return team
+    user = User.objects.get(userID=request.session['userID'])
+    team_user = Team_User.objects.filter(team=team, user=user)
+    if len(team_user) != 1:
+        return res(1, '你不是这个团队的成员，无法退出')
+    team_user = team_user[0]
+    if user.userID == team_user.team.manager.userID:
+        return res(1, '您是团队'+vals['team_name']+'的管理员，需要先移交管理权限再退出')
+    team_user.delete()
+    return res(0, '已退出团队'+vals['team_name'])
