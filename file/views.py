@@ -42,7 +42,8 @@ def acquire_teamfilelist(team, father_id, allow_del):
                            "createTime": i.create_time,
                            "lastEditTime": i.last_modify_time,
                            "isDir": i.isDir,
-                           "fatherID": i.fatherID})
+                           "fatherID": i.fatherID,
+                           "perm": i.team_perm})
     return result
 
 
@@ -203,28 +204,6 @@ def create_team_file(request):
 
 
 
-# 管理员修改团队文件权限
-@csrf_exempt
-def modify_team_file_perm(request):
-    if not request.method == 'POST':
-        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
-    if not login_check(request):
-        return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
-    user = User.objects.get(userID=request.session['userID'])
-    file = File.objects.get(fileID=request.POST['fileid'])
-    perm = request.POST['perm']
-    good, result = team_check(request)
-    if not good:
-        return result
-    if file.team is None:
-        return res(2105, "此文件不是团队文件")
-    if file.team.manager.userID != user.userID:
-        return res(2106, "需要修改权限请联系团队管理员 " + file.team.manager.username)
-    if perm != 0 and perm != 1:
-        return res(2107, "权限必须为0（读写）或1（只读），您提供了" + str(perm))
-    file.team_perm = perm
-    file.save()
-    return res(2000, "成功修改权限")
 
 
 @csrf_exempt

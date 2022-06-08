@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import *
 
+from file.views import team_check
 from utility.utility import *
 from team.models import Team, Team_User
 from file.models import File
@@ -404,3 +405,57 @@ def leave_team(request):
         return res(1, '您是团队'+vals['team_name']+'的管理员，需要先移交管理权限再退出')
     team_user.delete()
     return res(0, '已退出团队'+vals['team_name'])
+
+
+# 管理员修改团队文件权限
+@csrf_exempt
+def modify_team_file_perm(request):
+    if not request.method == 'POST':
+        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
+    if not login_check(request):
+        return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
+    user = User.objects.get(userID=request.session['userID'])
+    try:
+        file = File.objects.get(fileID=request.POST['fileid'])
+    except:
+        return res(1, '无法找到这个文件')
+    try:
+        perm = int(request.POST['perm'])
+    except:
+        return res(1, "权限必须为0（读写）或1（只读），您提供了" + str(request.POST['perm']))
+    good, result = team_check(request)
+    if not good:
+        return result
+    if file.team is None:
+        return res(2105, "此文件不是团队文件")
+    if file.team.manager.userID != user.userID:
+        return res(2106, "需要修改权限请联系团队管理员 " + file.team.manager.username)
+    if perm != 0 and perm != 1:
+        return res(2107, "权限必须为0（读写）或1（只读），您提供了" + str(perm))
+    file.team_perm = perm
+    file.save()
+    return res(0, "成功修改权限")
+
+# @csrf_exempt
+# def set_perm(request):
+#     # 一般检查
+#     if request.method != 'POST':
+#         return method_err()
+#     if not login_check(request):
+#         return need_login()
+#     vals = post_getAll(request, 'fileID', 'perm')
+#     lack, lack_list = check_lack(vals)
+#     if lack:
+#         return lack_err(lack_list)
+#     if vals['perm'] != 0 and vals['perm'] != 1:
+#         return res(1, '非法perm')
+#     try:
+#         file = File.objects.get(fileID=vals['fileID'])
+#     except:
+#         return res(1, '无法找到此文件')
+#     if file.team is None:
+#         return res(1, '此文件不属于任何团队，无法设置权限')
+#     user = User.objects.get(userID=request.session['userID'])
+#     if file.team.manager != user:
+#         return res(1, '你不是此文件所属团队的管理员')
+#     file.team_perm =
