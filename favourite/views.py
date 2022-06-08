@@ -20,6 +20,7 @@ def create_tag(request):
     try:
         tag_name = request.POST.get('tag_name')
         tag_color = request.POST.get('tag_color')
+        tag_details = request.POST.get('tag_details')
     except ValueError:
         return JsonResponse({'errno': 3001, 'msg': "标签不得为空"})
     except Exception as e:
@@ -28,8 +29,11 @@ def create_tag(request):
     tag_cur = Tag.objects.filter(tag_name=tag_name)
     if tag_cur.count() > 0:
         return JsonResponse({'errno': 3002, 'msg': "标签已存在"})
-    tag = Tag(tag_name=tag_name, user=user, tag_color=tag_color)
+    if len(tag_details) == 0:
+        tag_details = "这是标签的简介，你可以修改它"
+    tag = Tag(tag_name=tag_name, user=user, tag_color=tag_color, tag_details=tag_details)
     tag.save()
+<<<<<<< HEAD
     try:
         tag_details = request.POST.get('tag_details')
         if len(tag_details) == 0:
@@ -38,6 +42,14 @@ def create_tag(request):
         tag.save()
     except ValueError:
         return JsonResponse({'errno': 0, 'msg': "新建标签成功", 'tagID': tag.tagID})
+=======
+    # try:
+    #     tag_details = request.POST.get('tag_details')
+    #     tag.tag_details = tag_details
+    #     tag.save()
+    # except ValueError:
+    #     return JsonResponse({'errno': 0, 'msg': "新建标签成功", 'tagID': tag.tagID})
+>>>>>>> a17c9a83239aad691bbfad27afb1fb8e25347339
     return JsonResponse({'errno': 0, 'msg': "新建标签成功", 'tagID': tag.tagID, 'tag_count': 0})
 
 
