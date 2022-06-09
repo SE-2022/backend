@@ -290,6 +290,8 @@ def avatar(request):
     default_user = User.objects.get(username='default')
     try:
         user = User.objects.get(username=username)
+        return HttpResponse(user.avatar.read(), content_type='image/png')
     except:
         return HttpResponse(default_user.avatar.read(), content_type='image/png')
-    return HttpResponse(user.avatar.read(), content_type='image/png')
+
+
