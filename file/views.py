@@ -944,7 +944,7 @@ def read_by_share_link(request):
               'msg': '成功打开文件' + file.file_name,
 
               'perm': file_share[0].perm,  # 是否可写
-              'using': file.using,  # 使用者的用户名
+              # 'using': file.using.username,  # 使用者的用户名
               "is_fav": file.is_fav
     }
     return JsonResponse(result)
