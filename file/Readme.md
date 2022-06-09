@@ -88,13 +88,28 @@
 
 **还没实现**
 
-`/api/link/+20位的随机字符串`
+`/api/file/read_by_share_link`
 
 ### 需要参数
 
-无
+- link：分享链接，大约长这样http://123.57.69.30/api/link/gaeIpClazdwE15p6d2E
+
 
 ### 返回结果
 
-跟read_file一样
+```json
+{
+    "errno": 0,
+    "fileName": "rootfile2",
+    "fileid": 24,
+    "create_time": "2022-05-14T08:29:03.655Z",
+    "last_modify_time": "2022-06-08T04:29:56.142Z",
+    "author": "xyz",
+    "file_content": null,
+    "msg": "成功打开文件rootfile2",
+    "perm": 0,
+    "using": null,
+    "is_fav": true
+}
+```
 

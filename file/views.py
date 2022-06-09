@@ -920,7 +920,7 @@ def create_share_link(request):
     if perm != 0 and perm != 1:
         return res(2107, "权限必须为0（读写）或1（只读），您提供了" + str(perm))
     # 通过检查，
-    link = "http://123.57.69.30/api/link/"+make_password(file.file_name)[-20:-1]
+    link = make_password(file.file_name)[-20:-1]
     File_share_link.objects.create(
         file=file,
         perm=perm,
@@ -929,10 +929,33 @@ def create_share_link(request):
     return JsonResponse({
         'errno': 0,
         'res': "成功生成分享链接",
-        'link': link,
+        'link': "http://123.57.69.30/api/link/"+link,
     })
 
 
 @csrf_exempt
-def read_file_by_share_link(request):
-    pass
+def read_by_share_link(request):
+    link = request.POST['link']
+    link = link[-19:]
+    print(link)
+    file_share = File_share_link.objects.filter(link=link)
+    if len(file_share) != 1:
+        return res(1, '错误的链接')
+    # if file_share[0].create_time
+    file = file_share[0].file
+    if file.isDelete:
+        return res(1, '文件已被删除')
+    result = {'errno': 0,
+              'fileName': file.file_name,
+              'fileid': file.fileID,
+              'create_time': file.create_time,
+              'last_modify_time': file.last_modify_time,
+              'author': file.user.username,
+              'file_content': file.content if file.content != "" else None,
+              'msg': '成功打开文件' + file.file_name,
+
+              'perm': file_share[0].perm,  # 是否可写
+              'using': file.using,  # 使用者的用户名
+              "is_fav": file.is_fav
+    }
+    return JsonResponse(result)
