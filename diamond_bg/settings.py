@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [
     "123.57.69.30",
     "127.0.0.1",
     'testserver',
+    "horik.cn",
 ]
 
 

@@ -11,6 +11,7 @@ class File(models.Model):
     file_name = models.CharField(max_length=100)
     create_time = models.DateTimeField(auto_now_add=True)
     last_modify_time = models.DateTimeField(auto_now=True)
+    last_read_time = models.DateTimeField(auto_now_add=True)  # 上次访问时间，只在read_file的时候会更新
     user = models.ForeignKey(
         User,
         # to_field='userID',
@@ -69,3 +70,9 @@ class Comment(models.Model):
 #     # 0：所有人读写
 #     # 1：管理员读写，其余人只读
 #     perm = models.IntegerField(default=0)
+
+class File_share_link(models.Model):
+    file = models.ForeignKey(File, on_delete=models.CASCADE)
+    perm = models.IntegerField()
+    link = models.CharField(max_length=20)
+    create_time = models.TimeField(auto_now_add=True)

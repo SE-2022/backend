@@ -1,21 +1,16 @@
-from django.forms import forms
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
-from django import forms
+from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+
 # from six import BytesIO
 from favourite.models import TagFile
-from file.models import File, Comment
-from team.models import Team, Team_User
-from user.models import User
-from user.views import login_check, res
 # import qrcode
 from file.lock import *
-
-
+from file.models import File, Comment, File_share_link
+from team.models import Team, Team_User
 # from file.models import Directory
+from utility.utility import *
 
 
 @csrf_exempt
@@ -25,9 +20,14 @@ def acquire_filelist(user, father_id, allow_del):
     result = []
     for i in file_list:
         if not (i.isDelete and not allow_del):
-            result.append({"fileID": i.fileID, "fileName": i.file_name, "createTime": i.create_time,
+            result.append({"fileID": i.fileID,
+                           "fileName": i.file_name,
+                           "author": i.user.username,
+                           "createTime": i.create_time,
                            "lastEditTime": i.last_modify_time,
-                           "isDir": i.isDir, "fatherID": i.fatherID, "is_fav": i.is_fav})
+                           "isDir": i.isDir,
+                           "fatherID": i.fatherID,
+                           "is_fav": i.is_fav})
     return result
 
 
@@ -42,7 +42,8 @@ def acquire_teamfilelist(team, father_id, allow_del):
                            "createTime": i.create_time,
                            "lastEditTime": i.last_modify_time,
                            "isDir": i.isDir,
-                           "fatherID": i.fatherID})
+                           "fatherID": i.fatherID,
+                           "perm": i.team_perm})
     return result
 
 
@@ -203,28 +204,6 @@ def create_team_file(request):
 
 
 
-# 管理员修改团队文件权限
-@csrf_exempt
-def modify_team_file_perm(request):
-    if not request.method == 'POST':
-        return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
-    if not login_check(request):
-        return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
-    user = User.objects.get(userID=request.session['userID'])
-    file = File.objects.get(fileID=request.POST['fileid'])
-    perm = request.POST['perm']
-    good, result = team_check(request)
-    if not good:
-        return result
-    if file.team is None:
-        return res(2105, "此文件不是团队文件")
-    if file.team.manager.userID != user.userID:
-        return res(2106, "需要修改权限请联系团队管理员 " + file.team.manager.username)
-    if perm != 0 and perm != 1:
-        return res(2107, "权限必须为0（读写）或1（只读），您提供了" + str(perm))
-    file.team_perm = perm
-    file.save()
-    return res(2000, "成功修改权限")
 
 
 @csrf_exempt
@@ -269,12 +248,16 @@ def read_file(request):
         username = file.using.username
     # ------------互斥访问结束-------------
 
+    # 更新访问时间
+    file.last_read_time = timezone.now()
+    file.save()
+
     result = {'errno': 0,
               'fileName': file.file_name,
               'create_time': file.create_time,
               'last_modify_time': file.last_modify_time,
               'author': file.user.username,
-              'file_content': file.content,
+              'file_content': file.content if file.content != "" else None,
               'msg': '成功打开文件' + file.file_name,
 
               'writable': writable,  # 是否可写
@@ -343,6 +326,41 @@ def close_file(request):
         return res(0, '成功解除对文件 ' + file.file_name + ' 的锁定')
     return res(1, '没能解锁此文件（可能由于此用户并没有持有锁')
 
+
+#
+@csrf_exempt
+def last_10_read_file(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    user = User.objects.get(userID=request.session['userID'])
+    file_list = list(File.objects.filter(user=user))
+    file_list.sort(key=lambda x:x.last_read_time)
+    file_list = reversed(file_list)
+    cnt = 0
+    result = []
+    for i in file_list:
+        if cnt == 10:
+            break
+        if not i.isDelete and not i.isDir:
+            cnt += 1
+            result.append({
+                "fileID": i.fileID,
+                "fileName": i.file_name,
+                "createTime": i.create_time,
+                "lastEditTime": i.last_modify_time,
+                "lastReadTime": i.last_read_time,
+                "isDir": i.isDir,
+                "fatherID": i.fatherID,
+                "is_fav": i.is_fav
+            })
+    return JsonResponse({
+        'errno': 0,
+        'msg': '成功获取'+str(len(result))+'个最近访问的文件',
+        'file_list': result,
+    })
 
 @csrf_exempt
 def change_file_name(request):
@@ -860,3 +878,50 @@ def debug_file_status(request):
 
     return JsonResponse(result)
 
+
+@csrf_exempt
+def create_share_link(request):
+    # 一般检查
+    if request.method != 'POST':
+        return method_err()
+    if not login_check(request):
+        return need_login()
+    # 获取信息，并检查是否缺项
+    vals = post_getAll(request, 'fileID', 'perm')
+    vals['userID'] = request.session['userID']
+    lack, lack_list = check_lack(vals)
+    if lack:
+        return lack_err(lack_list)
+    try:
+        file = File.objects.get(fileID=vals['fileID'])
+    except:
+        return res(1, '找不到这个文件')
+    if file.user_id != request.session['userID']:
+        return res(1, '这不是你的文件，你共享个锤子')
+    if file.isDir:
+        return res(1, '不能共享文件夹')
+    try:
+        perm = int(request.POST['perm'])
+    except:
+        return res(1, "权限必须为0（读写）或1（只读），您提供了" + str(request.POST['perm']))
+    if file.team is not None:
+        return res(1, "此文件是团队文件，不能生成分享链接")
+    if perm != 0 and perm != 1:
+        return res(2107, "权限必须为0（读写）或1（只读），您提供了" + str(perm))
+    # 通过检查，
+    link = "http://123.57.69.30/api/link/"+make_password(file.file_name)[-20:-1]
+    File_share_link.objects.create(
+        file=file,
+        perm=perm,
+        link=link,
+    )
+    return JsonResponse({
+        'errno': 0,
+        'res': "成功生成分享链接",
+        'link': link,
+    })
+
+
+@csrf_exempt
+def read_file_by_share_link(request):
+    pass

@@ -155,6 +155,7 @@ def get_user_info(request):
                              'file_count': file_cnt,
                              'date_count': dates,
                              'seconds_count': seconds,
+                             'avatar_url': 'http://123.57.69.30/api/user/get_user_avatar',
                          }})
 
 
@@ -209,12 +210,12 @@ def edit_password(request):
 
 @csrf_exempt
 def get_user_avatar(request):
-    if request.method != 'POST':
-        return res(1, '请求方式错误')
+    # if request.method != 'POST':
+    #     return res(1, '请求方式错误')
     if not login_check(request):
         return need_login()
     user = User.objects.get(userID=request.session['userID'])
-    return HttpResponse(user.avatar.read(), content_type='image')
+    return HttpResponse(user.avatar.read(), content_type='image/png')
 
 
 @csrf_exempt
