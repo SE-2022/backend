@@ -209,8 +209,8 @@ def edit_password(request):
 
 @csrf_exempt
 def get_user_avatar(request):
-    if request.method != 'POST':
-        return res(1, '请求方式错误')
+    # if request.method != 'POST':
+    #     return res(1, '请求方式错误')
     if not login_check(request):
         return need_login()
     user = User.objects.get(userID=request.session['userID'])
