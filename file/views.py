@@ -257,7 +257,7 @@ def read_file(request):
               'create_time': file.create_time,
               'last_modify_time': file.last_modify_time,
               'author': file.user.username,
-              'file_content': file.content,
+              'file_content': file.content if file.content != "" else None,
               'msg': '成功打开文件' + file.file_name,
 
               'writable': writable,  # 是否可写
