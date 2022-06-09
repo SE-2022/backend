@@ -28,4 +28,5 @@ urlpatterns = [
     path('debug_file_status', debug_file_status),
     path('last_10_read_file', last_10_read_file),
     path('create_share_link', create_share_link),
+    path('read_by_share_link', read_by_share_link),
 ]

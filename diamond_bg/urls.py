@@ -15,7 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.template.defaulttags import url
-from django.urls import path, include
+from django.urls import path, include, re_path
+
+import file
 
 urlpatterns = [
     path('api/user/', include(('user.urls', 'user'))),
@@ -23,5 +25,5 @@ urlpatterns = [
     path('api/team/', include(('team.urls', 'team'))),
     path('api/message/', include(('message.urls', 'message'))),
     path('api/favourite/', include(('favourite.urls', 'favourite'))),
-
+    re_path('^api/link/.*$', file.views.read_by_share_link),
 ]
