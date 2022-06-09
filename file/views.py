@@ -1,4 +1,5 @@
 from django.contrib.auth.hashers import make_password
+from django.db.models import Model
 from django.utils import timezone
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
@@ -7,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from favourite.models import TagFile
 # import qrcode
 from file.lock import *
-from file.models import File, Comment, File_share_link
+from file.models import File, Comment, File_share_link, FileModel
 from team.models import Team, Team_User
 # from file.models import Directory
 from utility.utility import *
@@ -111,6 +112,7 @@ def create_file(request):
             #     return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
             # else:
             username = user.username
+
             new_file = File(fatherID=father_id,
                             isDir=file_type,
                             file_name=file_name,
@@ -120,6 +122,14 @@ def create_file(request):
                             # TeamID=team,
                             isDelete=False)
             # How to acquire the directory the file belong to?
+            if 'type' in request.POST:
+                type = request.POST.get('type')
+                try:
+                    mode = FileModel.objects.get(m_name=type)
+                except ObjectDoesNotExist:
+                    return JsonResponse({'errno': 2035, 'msg': "目标模板不存在"})
+                new_file.content = mode.m_content
+
             new_file.save()
             result = {'errno': 0,
                       "fileID": new_file.fileID,
@@ -129,6 +139,7 @@ def create_file(request):
                       'commentFul': new_file.commentFul,
                       'isDir': new_file.isDir,
                       'author': new_file.user.username,
+                      'content': new_file.content,
                       'msg': "新建成功",
                       "is_fav": new_file.is_fav}
             return JsonResponse(result)
@@ -229,7 +240,7 @@ def read_file(request):
     if file.isDir:
         return JsonResponse({'errno': 2023, 'msg': "不支持阅读文件夹内容"})
     if file.isDelete:
-        return JsonResponse({'errno': 2024, 'msg': "文件已被删除"})
+        return JsonResponse({'errno': 2024, 'msg': "文件已被删除，无法查看"})
 
     # ------------互斥访问-------------
     user = User.objects.get(userID=request.session['userID'])
@@ -287,7 +298,7 @@ def edit_file(request):
     file = File.objects.get(fileID=fileid, user=user)
 
     if file.isDelete:
-        return JsonResponse({'errno': 2012, 'msg': "文件已被删除"})
+        return JsonResponse({'errno': 2012, 'msg': "文件已被删除，无法编辑"})
     elif file.isDir:
         return JsonResponse({'errno': 2013, 'msg': "无法编辑文件夹内容"})
     # ------------互斥访问-------------

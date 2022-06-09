@@ -76,3 +76,9 @@ class File_share_link(models.Model):
     perm = models.IntegerField()
     link = models.CharField(max_length=20)
     create_time = models.TimeField(auto_now_add=True)
+
+
+class FileModel(models.Model):
+    m_id = models.AutoField(primary_key=True, editable=False)
+    m_name = models.CharField(max_length=100, unique=True)
+    m_content = models.CharField(max_length=65535, null=True)
