@@ -155,6 +155,7 @@ def get_user_info(request):
                              'file_count': file_cnt,
                              'date_count': dates,
                              'seconds_count': seconds,
+                             'avatar_url': 'http://123.57.69.30/api/user/get_user_avatar',
                          }})
 
 
