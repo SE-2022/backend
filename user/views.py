@@ -214,7 +214,7 @@ def get_user_avatar(request):
     if not login_check(request):
         return need_login()
     user = User.objects.get(userID=request.session['userID'])
-    return HttpResponse(user.avatar.read(), content_type='image')
+    return HttpResponse(user.avatar.read(), content_type='image/png')
 
 
 @csrf_exempt
