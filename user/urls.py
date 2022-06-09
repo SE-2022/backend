@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from .views import *
 
 urlpatterns = [
@@ -16,4 +16,5 @@ urlpatterns = [
     path('debug_clear_user', debug_clear_user),
     path('debug_get_login_list', debug_get_login_list),
     path('debug_everyone_logout', debug_everyone_logout),
+    re_path('^avatar/.*$', avatar),
 ]

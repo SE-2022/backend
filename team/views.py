@@ -257,10 +257,12 @@ def team_info(request):
             user_list.append({
                 'username': tu.user.username,
                 'email': tu.user.email,
+                'avatar_url': 'http://123.57.69.30/api/user/avatar/'+tu.user.username,
             })
     manager_list = [{
         'username': team.manager.username,
         'email': team.manager.email,
+        'avatar_url': 'http://123.57.69.30/api/user/avatar/'+team.manager.username,
     }]
     return JsonResponse({'errno': 0,
                          'msg': '获取团队信息成功',
