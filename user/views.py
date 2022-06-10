@@ -287,11 +287,15 @@ def debug_everyone_logout(request):
 def avatar(request):
     username = request.path.split('/')[-1]
     print(username)
-    default_user = User.objects.get(username='default')
+
     try:
         user = User.objects.get(username=username)
         return HttpResponse(user.avatar.read(), content_type='image/png')
     except:
-        return HttpResponse(default_user.avatar.read(), content_type='image/png')
+        try:
+            default_user = User.objects.get(username='default')
+            return HttpResponse(default_user.avatar.read(), content_type='image/png')
+        except:
+            return res(1, '本用户没有头像，default用户又找不见，弄啥嘞')
 
 
