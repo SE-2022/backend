@@ -266,9 +266,11 @@ def show_all_fav_file(request):
         return JsonResponse({'errno': 3009, 'msg': "用户未登录"})
     user = User.objects.get(userID=request.session['userID'])
     # sql = "select distinct file_id from favourite_tagfile where user_id=%s" % user.userID
-    file_list = TagFile.objects.values_list('file', flat=True).distinct()
+    file_list2 = TagFile.objects.filter(user=user)
+    file_list3 = file_list2.values_list('file', flat=True).distinct()
+    # file_list = TagFile.objects.values_list('file', flat=True).distinct()
     result = []
-    for i in file_list:
+    for i in file_list3:
         file = File.objects.get(fileID=i)
         if not file.isDelete:
             # file.is_fav = True
@@ -276,5 +278,3 @@ def show_all_fav_file(request):
             result.append({"fileID": file.fileID, "fileName": file.file_name, "createTime": file.create_time,
                            "lastEditTime": file.last_modify_time})
     return JsonResponse({'errno': 0, 'msg': "查询成功", 'file_list': result})
-
-
