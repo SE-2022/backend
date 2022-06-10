@@ -194,6 +194,13 @@ def create_team_file(request):
                             team=team,
                             isDelete=False)
             # How to acquire the directory the file belong to?
+            if 'type' in request.POST:
+                type = request.POST.get('type')
+                try:
+                    mode = FileModel.objects.get(m_name=type)
+                except ObjectDoesNotExist:
+                    return JsonResponse({'errno': 2135, 'msg': "目标模板不存在"})
+                new_file.content = mode.m_content
             new_file.save()
             result = {'errno': 0,
                       "fileID": new_file.fileID,
@@ -203,6 +210,7 @@ def create_team_file(request):
                       'commentFul': new_file.commentFul,
                       'isDir': new_file.isDir,
                       'author': new_file.user.username,
+                      'content': new_file.content,
                       'team': team.team_name,
                       'msg': "新建成功"}
             return JsonResponse(result)
