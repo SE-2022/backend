@@ -108,8 +108,8 @@ def create_file(request):
             except Exception as e:
                 return JsonResponse({'errno': 2000, 'msg': repr(e)})
             file = File.objects.filter(file_name=file_name, isDelete=False, user=user)
-            # if file.count():
-            #     return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
+            if file.count():
+                return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
             # else:
             username = user.username
 
@@ -164,13 +164,14 @@ def create_team_file(request):
                 user = User.objects.get(userID=request.session['userID'])
                 comment = request.POST.get('commentFul')
                 file_type = request.POST.get('isDir')
-                father_id = request.POST.get('father_id')  # 返回当前文件夹的父节点编号，若当前在根目录下，则返回0
+                father_id = request.POST.get('father_id')
                 team_name = request.POST.get('team_name')
+                mode_type = request.POST.get('type')
             except ValueError:
                 return JsonResponse({'errno': 2001, 'msg': "文件名不得为空"})
             except Exception as e:
                 return JsonResponse({'errno': 2000, 'msg': repr(e)})
-            file = File.objects.filter(file_name=file_name, isDelete=False, user=user)
+
             try:
                 team = Team.objects.get(team_name=team_name)
             except:
@@ -180,9 +181,11 @@ def create_team_file(request):
             father = File.objects.get(fileID=father_id)
             if father.team_id != team.teamID:
                 return res(2108, '父文件所属团队，与您想创建文件的团队，不匹配')
-
+            file = File.objects.filter(file_name=file_name, isDelete=False, user=user, team=team)
+            if file.count():
+                return JsonResponse({'errno': 2102, 'msg': "文件名重复"})
             # if file.count():
-            #     return JsonResponse({'errno': 2002, 'msg': "文件名重复"})
+            #     return JsonResponse({'errno': 2102, 'msg': "文件名重复"})
             # else:
             username = user.username
             new_file = File(fatherID=father_id,
@@ -193,15 +196,16 @@ def create_team_file(request):
                             commentFul=comment,
                             team=team,
                             isDelete=False)
+            new_file.save()
             # How to acquire the directory the file belong to?
-            if 'type' in request.POST:
-                type = request.POST.get('type')
+            if len(mode_type):
+                # type = request.POST.get('type')
                 try:
-                    mode = FileModel.objects.get(m_name=type)
+                    mode = FileModel.objects.get(m_name=mode_type)
                 except ObjectDoesNotExist:
                     return JsonResponse({'errno': 2135, 'msg': "目标模板不存在"})
                 new_file.content = mode.m_content
-            new_file.save()
+                new_file.save()
             result = {'errno': 0,
                       "fileID": new_file.fileID,
                       'fileName': new_file.file_name,
@@ -210,19 +214,14 @@ def create_team_file(request):
                       'commentFul': new_file.commentFul,
                       'isDir': new_file.isDir,
                       'author': new_file.user.username,
-                      'content': new_file.content,
                       'team': team.team_name,
+                      'content': new_file.content,
                       'msg': "新建成功"}
             return JsonResponse(result)
         else:
             return JsonResponse({'errno': 2009, 'msg': "用户未登录"})
     else:
         return JsonResponse({'errno': 2010, 'msg': "请求方式错误"})
-
-
-
-
-
 
 
 @csrf_exempt
@@ -356,7 +355,7 @@ def last_10_read_file(request):
         return need_login()
     user = User.objects.get(userID=request.session['userID'])
     file_list = list(File.objects.filter(user=user))
-    file_list.sort(key=lambda x:x.last_read_time)
+    file_list.sort(key=lambda x: x.last_read_time)
     file_list = reversed(file_list)
     cnt = 0
     result = []
@@ -377,9 +376,10 @@ def last_10_read_file(request):
             })
     return JsonResponse({
         'errno': 0,
-        'msg': '成功获取'+str(len(result))+'个最近访问的文件',
+        'msg': '成功获取' + str(len(result)) + '个最近访问的文件',
         'file_list': result,
     })
+
 
 @csrf_exempt
 def change_file_name(request):
@@ -937,7 +937,7 @@ def create_share_link(request):
     return JsonResponse({
         'errno': 0,
         'res': "成功生成分享链接",
-        'link': "http://123.57.69.30/api/link/"+link,
+        'link': "http://123.57.69.30/api/link/" + link,
     })
 
 
@@ -965,5 +965,5 @@ def read_by_share_link(request):
               'perm': file_share[0].perm,  # 是否可写
               # 'using': file.using.username,  # 使用者的用户名
               "is_fav": file.is_fav
-    }
+              }
     return JsonResponse(result)
