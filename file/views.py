@@ -335,7 +335,7 @@ def close_file(request):
     print(type(user))
     if unlock(file, user):
         return res(0, '成功解除对文件 ' + file.file_name + ' 的锁定')
-    return res(1, '没能解锁此文件（可能由于此用户并没有持有锁')
+    return res(1, '没能解锁此文件（可能由于此用户并没有持有锁)')
 
 
 #
